@@ -18,8 +18,8 @@ namespace SemesterProject
         public string Username { get; private set; }
         public string Password { get; private set; }
         public int coins { get; set; } = 0;
-        public List<Card>? Deck;
-        public List<Card>? Stack;
+        public List<Card>? Deck { get; set; }
+        public List<Card>? Stack { get; set; }
 
     }
 }
