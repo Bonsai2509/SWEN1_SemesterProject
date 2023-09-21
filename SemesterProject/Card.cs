@@ -21,12 +21,21 @@ namespace SemesterProject
     {
         public Card(ECardType type, string name, int damage, EDamageType elem)
         {
-            CardType = type;
+            this.CardType = type;
             Name = name;
             Damage = damage;
             Element = elem;
         }
-        public ECardType CardType { get; private set; }
+        //public ECardType CardType { get; private set; }
+
+        private ECardType _CardType;
+
+        public ECardType CardType
+        {
+            get { return _CardType; }
+            set { _CardType = value; }
+        }
+
         public string Name { get; private set; }
         private int Damage { get;  }
         public EDamageType Element { get; set; }
