@@ -9,12 +9,14 @@ namespace SemesterProject
 {
     internal class Player
     {
-        public Player(string Username, string Password, List<Card> Deck, List<Card> Stackj, int Coins = 20, int Elo=100)
+        public Player(string Username, string Password, List<Card> Deck, List<Card> Stack, int Coins = 20, int Elo=100, int GameCount=0, int Wins=0)
         {
             this.Username = Username;
             this.Password = Password;
             this.coins = Coins;
             this.Elo = Elo;
+            this.GameCount = GameCount;
+            this.Wins = Wins;
             this.Deck = Deck;
             this.Stack = Stack;
         }
@@ -22,6 +24,8 @@ namespace SemesterProject
         public string Password { get; private set; }
         public int coins { get; set; } = 0;
         public int Elo { get; }
+        public int GameCount { get; }
+        public int Wins { get; }
         public List<Card> Deck { get; set; }
         public List<Card> Stack { get; set; }
 
