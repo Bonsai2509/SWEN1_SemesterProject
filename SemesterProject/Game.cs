@@ -15,9 +15,9 @@ namespace SemesterProject
 
         public List<Player> Players { get; set; }
 
-        private Random Rnd = new Random();
         public void Battle()
         {
+            Random Rnd = new Random();
             int RoundCounter = 0;
             List<Card> Player1Deck = Players[0].Deck;
             List<Card> Player2Deck = Players[1].Deck;

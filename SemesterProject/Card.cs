@@ -26,15 +26,9 @@ namespace SemesterProject
             Damage = damage;
             Element = elem;
         }
-        //public ECardType CardType { get; private set; }
+        public ECardType CardType { get; }
 
-        private ECardType _CardType;
-
-        public ECardType CardType
-        {
-            get { return _CardType; }
-            set { _CardType = value; }
-        }
+        
 
         public string Name { get; private set; }
         private int Damage { get;  }
