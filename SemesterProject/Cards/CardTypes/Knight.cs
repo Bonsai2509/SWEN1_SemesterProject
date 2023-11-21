@@ -4,65 +4,46 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-enum ECardType
+namespace SemesterProject.Cards.CardTypes
 {
-    monster=0, spell=1
-}
-
-enum EDamageType
-{
-    normal = 0, fire = 1, water = 2
-}
-
-
-namespace SemesterProject
-{
-    abstract internal class Card
+    internal class Knight : Card
     {
-        public Card(ECardType type, string name, int damage, EDamageType elem)
+        public Knight(ECardType type, string name, int damage, EDamageType elem) : base(type, name, damage, elem)
         {
-            this.CardType = type;
-            Name = name;
-            Damage = damage;
-            Element = elem;
         }
-        public ECardType CardType { get; }
-
-        
-
-        public string Name { get; private set; }
-        private int Damage { get;  }
-        public EDamageType Element { get; set; }
-
-
-        public int CalcDmgAmount(ECardType EnemyType, EDamageType EnemyElement)
+        public override int CalcDmgAmount(Card EnemyCard)
         {
             int CalcDmg = 0;
-
-            if(CardType == ECardType.spell || EnemyType == ECardType.spell)
+            ECardType enemyType = EnemyCard.CardType;
+            EDamageType enemyElement = EnemyCard.Element;
+            if (EnemyCard.Name == "WaterSpell")
             {
-                switch(Element)
+                return 0;
+            }
+            else if (CardType == ECardType.spell || CardType == ECardType.special || enemyType == ECardType.spell || enemyType == ECardType.special)
+            {
+                switch (Element)
                 {
                     case EDamageType.normal:
-                        if (EnemyElement == EDamageType.water)
+                        if (enemyElement == EDamageType.water)
                         {
                             CalcDmg = 2 * Damage;
                         }
-                        else if (EnemyElement == EDamageType.fire)
-                        { 
-                            CalcDmg = Damage/2;
+                        else if (enemyElement == EDamageType.fire)
+                        {
+                            CalcDmg = Damage / 2;
                         }
                         else
                         {
                             CalcDmg = Damage;
                         }
                         break;
-                     case EDamageType.fire:
-                        if (EnemyElement == EDamageType.normal)
+                    case EDamageType.fire:
+                        if (enemyElement == EDamageType.normal)
                         {
                             CalcDmg = 2 * Damage;
                         }
-                        else if (EnemyElement == EDamageType.water)
+                        else if (enemyElement == EDamageType.water)
                         {
                             CalcDmg = Damage / 2;
                         }
@@ -72,11 +53,11 @@ namespace SemesterProject
                         }
                         break;
                     case EDamageType.water:
-                        if (EnemyElement == EDamageType.fire)
+                        if (enemyElement == EDamageType.fire)
                         {
                             CalcDmg = 2 * Damage;
                         }
-                        else if (EnemyElement == EDamageType.normal)
+                        else if (enemyElement == EDamageType.normal)
                         {
                             CalcDmg = Damage / 2;
                         }
@@ -85,7 +66,7 @@ namespace SemesterProject
                             CalcDmg = Damage;
                         }
                         break;
-                    default:break;
+                    default: break;
                 }
             }
             else
