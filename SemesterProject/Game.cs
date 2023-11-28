@@ -38,7 +38,7 @@ namespace SemesterProject
             List<Card> Player1Deck = Player1.Deck;
             List<Card> Player2Deck = Player2.Deck;
 
-            battleLog = $"Battle between {Player1.Username} and {Player2.Username}:\n"
+            battleLog = $"Battle between {Player1.Username} and {Player2.Username}:\n";
 
             int RandomIndex1 = 0;
             int RandomIndex2 = 0;
