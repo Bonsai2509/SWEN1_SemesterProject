@@ -19,7 +19,8 @@ namespace SemesterProject.Server.Requests
         {
             using var reader = new StreamReader(_client.GetStream(), leaveOpen: true);
             Method httpMethod;
-            string target;
+            string targetString;
+            string[] target;
             string version;
 
             var headers = new Dictionary<string, string>();
@@ -41,21 +42,27 @@ namespace SemesterProject.Server.Requests
                 var firstLine = line.Split(' ');
 
                 httpMethod = Utility.GetMethod(firstLine[0]);
-                target = firstLine[1];
+                targetString = firstLine[1];
                 version = firstLine[2];
 
                 int QuestionmarkIndex;
 
-                if (httpMethod == Method.Get && (QuestionmarkIndex = target.IndexOf("?")) != -1)
+                if (httpMethod == Method.Get && (QuestionmarkIndex = targetString.IndexOf("?")) != -1)
                 {
-                    requestParam = target[(QuestionmarkIndex + 1)..];
-                    target = target[..QuestionmarkIndex];
+                    requestParam = targetString[(QuestionmarkIndex + 1)..];
+                    targetString = targetString[..QuestionmarkIndex];
                 }
 
-                Console.WriteLine(httpMethod);
-                Console.WriteLine(target);
+                target = targetString.Split('/');
+
+                /*Console.WriteLine(httpMethod);
+                Console.WriteLine(targetString);
                 Console.WriteLine(version);
                 Console.Write(requestParam);
+                foreach ( var item in target)
+                {
+                    Console.WriteLine(item);
+                }*/
             }
             catch (IOException e)
             {
@@ -78,11 +85,11 @@ namespace SemesterProject.Server.Requests
                     headers.Add(header[0].Trim(), header[1].Trim());
                     if (header[0] == "Content-Length") contentLength = int.Parse(header[1]);
                 }
-                foreach (KeyValuePair<string, string> header in headers)
+                /*foreach (KeyValuePair<string, string> header in headers)
                 {
-                    Console.WriteLine("Key: {0}, Value: {1}",
+                    Console.WriteLine("Key: {0}, Value: {1}\n",
                         header.Key, header.Value);
-                }
+                }*/
             }
             catch (IOException e)
             {
@@ -112,6 +119,7 @@ namespace SemesterProject.Server.Requests
 
                 payload = httpBody.ToString();
             }
+            Console.WriteLine(payload);
             var req = new Request(httpMethod, target, version, headers, payload, requestParam);
             return req;
         }

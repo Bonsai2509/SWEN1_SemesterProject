@@ -27,25 +27,20 @@ namespace SemesterProject.Server
         Post,
         Put,
         Delete,
-        Patch,
-        Head,
         Error
     }
     internal class Utility
     {
         public static Method GetMethod(string method)
         {
-            method = method.ToLower();
-            return method switch
+            switch(method.ToLower())
             {
-                "put" => Method.Put,
-                "post" => Method.Post,
-                "get" => Method.Get,
-                "patch" => Method.Patch,
-                "head" => Method.Head,
-                "delete" => Method.Delete,
-                _ => Method.Error
-            };
+                case "put": return Method.Put;
+                case "post": return Method.Post;
+                case "get": return Method.Get;
+                case "delete": return Method.Delete;
+                default: return Method.Error;
+            }
         }
     }
 }

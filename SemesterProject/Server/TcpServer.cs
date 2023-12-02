@@ -35,8 +35,8 @@ namespace SemesterProject.Server
         {
             var _reqReader = new RequestReader(client);
             var request = _reqReader.ReadRequest();
+            var router = new RequestRouter();
+            var response = router.HandleRequest(request);
         }
-
-        private Res
     }
 }

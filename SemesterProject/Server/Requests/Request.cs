@@ -8,7 +8,7 @@ namespace SemesterProject.Server.Requests
 {
     internal class Request
     {
-        public Request(Method method, string target, string version, Dictionary<string, string> headers, string payload, string requestParam)
+        public Request(Method method, string[] target, string version, Dictionary<string, string> headers, string payload, string requestParam)
         {
             Method = method;
             Target = target;
@@ -19,7 +19,7 @@ namespace SemesterProject.Server.Requests
         }
 
         public Method Method { get; }
-        public string Target { get; }
+        public string[] Target { get; }
         public string Version { get; }
         public Dictionary<string, string> Headers { get; }
         public string Payload { get; }
