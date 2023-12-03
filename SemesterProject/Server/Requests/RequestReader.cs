@@ -52,9 +52,8 @@ namespace SemesterProject.Server.Requests
                     requestParam = targetString[(QuestionmarkIndex + 1)..];
                     targetString = targetString[..QuestionmarkIndex];
                 }
-
                 target = targetString.Split('/');
-
+                target = target.Skip(1).ToArray();
                 /*Console.WriteLine(httpMethod);
                 Console.WriteLine(targetString);
                 Console.WriteLine(version);

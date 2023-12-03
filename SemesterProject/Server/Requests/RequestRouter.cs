@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SemesterProject.Server.Responses;
+using SemesterProject.Server.Requests.Handlers;
+using SemesterProject.Server.Responses;
 
 namespace SemesterProject.Server.Requests
 {
@@ -12,13 +14,14 @@ namespace SemesterProject.Server.Requests
     {
         public Response HandleRequest(Request request)
         {
-            var response = new Response();
-            switch(request.Target[0])
+            switch (request.Method)
             {
-                case "": Get(request);
-                    break;
+                case Method.Get: return new GetHandler().HandleGet(request);
+                case Method.Post: return new PostHandler().HandlePost(request);
+                case Method.Put: return new PutHandler().HandlePut(request);
+                case Method.Delete: return new DeleteHandler().HandleDelete(request);
             }
+            return new ResponseBuilder().MethodNotAllowed();
         }
     }
-
 }

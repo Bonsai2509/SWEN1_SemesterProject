@@ -42,5 +42,15 @@ namespace SemesterProject.Server
                 default: return Method.Error;
             }
         }
+        public string ExtractTokenFromString(string authorizationHeader)
+        {
+            string[] parts = authorizationHeader.Split(' ');
+            return parts[1];
+        }
+        public string ExtractUsernameFromToken(string token)
+        {
+            int tokenIndex = token.IndexOf('-');
+            return token[..tokenIndex];
+        }
     }
 }
