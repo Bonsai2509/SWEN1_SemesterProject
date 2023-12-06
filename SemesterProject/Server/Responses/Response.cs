@@ -44,5 +44,13 @@ namespace SemesterProject.Server.Responses
             Status=(int)status;
             StatusString = status.ToString();
         }
+        public Response(string payload, Status status = Server.Status.Ok) 
+        {
+            ContentType = "text/plain";
+            Payload = payload;
+            hasBody = true;
+            Status=(int)status;
+            StatusString = status.ToString();
+        }
     }
 }

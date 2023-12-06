@@ -38,5 +38,10 @@ namespace SemesterProject.Server.Responses
         {
             return new Response(data);
         }
+
+        public Response PlainTextResponse(string plainText)
+        {
+            return new Response(plainText);
+        }
     }
 }

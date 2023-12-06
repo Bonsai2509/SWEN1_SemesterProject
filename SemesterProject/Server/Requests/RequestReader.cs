@@ -111,7 +111,6 @@ namespace SemesterProject.Server.Requests
 
                 payload = httpBody.ToString();
             }
-            Console.WriteLine(payload);
             var req = new Request(httpMethod, target, version, headers, payload, requestParam);
             return req;
         }
