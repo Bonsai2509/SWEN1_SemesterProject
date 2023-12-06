@@ -58,7 +58,7 @@ namespace SemesterProject.Database
             CREATE TABLE IF NOT EXISTS ""user""(
             elo integer NOT NULL,
             wins integer NOT NULL,
-            losses integer NOT NULL,
+            loses integer NOT NULL,
             draws integer NOT NULL,
             coins integer NOT NULL,
             username character varying(255) NOT NULL,

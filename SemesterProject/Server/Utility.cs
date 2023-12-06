@@ -33,7 +33,7 @@ namespace SemesterProject.Server
     {
         public static Method GetMethod(string method)
         {
-            switch(method.ToLower())
+            switch (method.ToLower())
             {
                 case "put": return Method.Put;
                 case "post": return Method.Post;
@@ -45,6 +45,10 @@ namespace SemesterProject.Server
         public string ExtractTokenFromString(string authorizationHeader)
         {
             string[] parts = authorizationHeader.Split(' ');
+            if (parts.Length != 2)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
             return parts[1];
         }
         public string ExtractUsernameFromToken(string token)

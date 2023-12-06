@@ -38,6 +38,10 @@ namespace SemesterProject.Server.Responses
         {
             return new Response(data);
         }
+        public Response JsonResponseUserScoreList(List<UserScores> data)
+        {
+            return new Response(data);
+        }
 
         public Response PlainTextResponse(string plainText)
         {

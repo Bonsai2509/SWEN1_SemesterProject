@@ -21,6 +21,7 @@ namespace SemesterProject.Server.Security
 
         public bool AuthorizeUserByUsernameInTarget(string username, Request request)
         {
+            if (!RequestContainsToken(request)) return false;
             var _utility = new Utility();
             string token = _utility.ExtractTokenFromString(request.Headers["Authorization"]);
             string usernameInToken = _utility.ExtractUsernameFromToken(token);
@@ -44,9 +45,11 @@ namespace SemesterProject.Server.Security
         }
         public bool AuthorizeUserByToken(Request request)
         {
+            if(!RequestContainsToken(request)) return false;
             var _utility = new Utility();
             string token = _utility.ExtractTokenFromString(request.Headers["Authorization"]);
             string usernameInToken = _utility.ExtractUsernameFromToken(token);
+
 
             //check if user with token exist
             using var command = new NpgsqlCommand(@"SELECT * FROM ""user"" WHERE ""username""=@p1;", Connection);

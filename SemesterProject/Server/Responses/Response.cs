@@ -44,6 +44,15 @@ namespace SemesterProject.Server.Responses
             Status=(int)status;
             StatusString = status.ToString();
         }
+        public Response(List<UserScores> payload, Status status = Server.Status.Ok) 
+        {
+            string json = JsonConvert.SerializeObject(payload);
+            ContentType = "application/json";
+            Payload = json;
+            hasBody = true;
+            Status=(int)status;
+            StatusString = status.ToString();
+        }
         public Response(string payload, Status status = Server.Status.Ok) 
         {
             ContentType = "text/plain";
