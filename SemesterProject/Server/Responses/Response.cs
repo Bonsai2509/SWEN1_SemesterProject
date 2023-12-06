@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using SemesterProject.Server;
+using SemesterProject.Server.Models;
 
 namespace SemesterProject.Server.Responses
 {
@@ -25,7 +27,17 @@ namespace SemesterProject.Server.Responses
 
         public Response(object payload, Status status = Server.Status.Ok) 
         {
-            string json = JsonSerializer.Serialize(payload);
+            string json = JsonConvert.SerializeObject(payload);
+            ContentType = "application/json";
+            Payload = json;
+            hasBody = true;
+            Status=(int)status;
+            StatusString = status.ToString();
+        }
+        //needed a specific one for card since "List<object> payload" threw an error
+        public Response(List<CardData> payload, Status status = Server.Status.Ok) 
+        {
+            string json = JsonConvert.SerializeObject(payload);
             ContentType = "application/json";
             Payload = json;
             hasBody = true;

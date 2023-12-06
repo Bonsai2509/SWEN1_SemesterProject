@@ -14,12 +14,13 @@ namespace SemesterProject.Server.Requests
     {
         public Response HandleRequest(Request request)
         {
+            if(request == null) return new ResponseBuilder().BadRequest();
             switch (request.Method)
             {
                 case Method.Get: return new GetHandler().HandleGet(request);
-                case Method.Post: return new PostHandler().HandlePost(request);
-                case Method.Put: return new PutHandler().HandlePut(request);
-                case Method.Delete: return new DeleteHandler().HandleDelete(request);
+                //case Method.Post: return new PostHandler().HandlePost(request);
+                //case Method.Put: return new PutHandler().HandlePut(request);
+               // case Method.Delete: return new DeleteHandler().HandleDelete(request);
             }
             return new ResponseBuilder().MethodNotAllowed();
         }

@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace SemesterProject.Server.Requests.Handlers
 {
-    internal class PutHandler
+    internal class PutHandler : Handler
     {
-        public Response HandlePut(Request request)
+        /*public Response HandlePut(Request request)
         {
 
         }
@@ -22,6 +22,6 @@ namespace SemesterProject.Server.Requests.Handlers
         private Response PutDeck(Request request)
         {
 
-        }
+        }*/
     }
 }

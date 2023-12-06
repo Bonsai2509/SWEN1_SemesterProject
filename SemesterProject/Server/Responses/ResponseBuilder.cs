@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SemesterProject.Server.Models;
 
 namespace SemesterProject.Server.Responses
 {
@@ -24,8 +25,16 @@ namespace SemesterProject.Server.Responses
         {
             return new Response(Status.Unauthorized);
         }
+        public Response InternalServerError()
+        {
+            return new Response(Status.InternalServerError);
+        }
 
         public Response JsonResponse(object data)
+        {
+            return new Response(data);
+        }
+        public Response JsonResponseCardList(List<CardData> data)
         {
             return new Response(data);
         }

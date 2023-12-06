@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace SemesterProject.Server.Requests.Handlers
 {
-    internal class DeleteHandler
+    internal class DeleteHandler : Handler
     {
-        public Response HandleDelete(Request request)
+        /*public Response HandleDelete(Request request)
         {
             if (request.Target[0] == "tradings")
             {
@@ -24,6 +24,6 @@ namespace SemesterProject.Server.Requests.Handlers
         private Response DeleteTrade(Request request)
         {
 
-        }
+        }*/
     }
 }

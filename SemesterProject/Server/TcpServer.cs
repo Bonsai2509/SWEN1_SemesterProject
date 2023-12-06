@@ -6,6 +6,10 @@ using System.Threading;
 using System.Net;
 using SemesterProject.Server;
 using SemesterProject.Server.Requests;
+using System.Data.SqlTypes;
+using System.Data.Sql;
+using System.Data.SqlClient;
+using SemesterProject.Server.Responses;
 
 namespace SemesterProject.Server
 {
@@ -33,11 +37,34 @@ namespace SemesterProject.Server
         }
         private void HandleClient(System.Net.Sockets.TcpClient client)
         {
-            var _reqReader = new RequestReader(client);
-            var request = _reqReader.ReadRequest();
-            var router = new RequestRouter();
-            var response = router.HandleRequest(request);
-            Console.Write(response.Payload);
+            Response response = null;
+            try
+            {
+                var _reqReader = new RequestReader(client);
+                var request = _reqReader.ReadRequest();
+                var router = new RequestRouter();
+                response = router.HandleRequest(request);
+            }
+            catch(SqlException)
+            {
+                response = new ResponseBuilder().BadRequest();
+            }
+            catch(IOException)
+            {
+                response = new ResponseBuilder().InternalServerError();
+            }
+            catch (ArgumentException)
+            {
+                response = new ResponseBuilder().BadRequest();
+            }
+            catch (NullReferenceException)
+            {
+                response = new ResponseBuilder().InternalServerError();
+            }
+            Console.WriteLine(response.Status);
+            Console.WriteLine(response.StatusString);
+            Console.WriteLine(response.Payload);
+            //send response
         }
     }
 }

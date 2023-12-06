@@ -9,25 +9,26 @@ namespace SemesterProject.Cards
 {
     internal class CardBuilder
     {
-        private ECardType[] _cardType;
-        private string[] _name;
-        private int[] _damage;
-        private EDamageType[] _element;
+        public ECardType[] CardType { get; }
+        public string[] Name { get; }
+        public int[] Damage { get; }
+        public EDamageType[] Element { get; }
 
         public CardBuilder() 
         {
-            _name = new string[] { "Dragon", "DuplicateCard", "FireElve", "FireSpell", "Goblin", "Knight", "Kraken", "Ork", "StealCard", "WaterSpell", "Wizard" };
-            _cardType = new ECardType[] { ECardType.monster, ECardType.special, ECardType.monster, ECardType.spell, ECardType.monster, ECardType.monster, ECardType.monster, ECardType.monster, ECardType.special, ECardType.spell, ECardType.monster };
-            _damage = new int[] { 40, 15, 20, 20, 10, 25, 45, 30, 15, 20, 25};
-            _element = new EDamageType[] {EDamageType.fire, EDamageType.normal, EDamageType.fire, EDamageType.fire, EDamageType.normal, EDamageType.normal, EDamageType.water, EDamageType.normal, EDamageType.normal, EDamageType.water, EDamageType.normal};
+            Name = new string[] { "Dragon", "DuplicateCard", "FireElve", "FireSpell", "Goblin", "Knight", "Kraken", "Ork", "StealCard", "WaterSpell", "Wizard" };
+            CardType = new ECardType[] { ECardType.monster, ECardType.special, ECardType.monster, ECardType.spell, ECardType.monster, ECardType.monster, ECardType.monster, ECardType.monster, ECardType.special, ECardType.spell, ECardType.monster };
+            Damage = new int[] { 40, 15, 20, 20, 10, 25, 45, 30, 15, 20, 25};
+            Element = new EDamageType[] {EDamageType.fire, EDamageType.normal, EDamageType.fire, EDamageType.fire, EDamageType.normal, EDamageType.normal, EDamageType.water, EDamageType.normal, EDamageType.normal, EDamageType.water, EDamageType.normal};
         }
 
         public Card generateCard(int index)
         {
-            ECardType cardType = _cardType[index];
-            string name = _name[index];
-            int damage = _damage[index];
-            EDamageType element = _element[index];
+            if(index>(Name.Length-1) || index<0) throw new ArgumentOutOfRangeException("index");
+            ECardType cardType = CardType[index];
+            string name = Name[index];
+            int damage = Damage[index];
+            EDamageType element = Element[index];
             switch (name)
             {
                 case "Dragon": return new Dragon(cardType, name, damage, element);
@@ -43,7 +44,7 @@ namespace SemesterProject.Cards
                 case "Wizard": return new Wizard(cardType, name, damage, element);
                 default:break;
             }
-            return new Goblin(ECardType.monster, "DummyCard", 1, EDamageType.normal);
+            throw new NotImplementedException();
         }
     }
 }

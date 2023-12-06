@@ -40,9 +40,16 @@ namespace SemesterProject.Database
             connection = _datasource.OpenConnection();
         }
 
+        public void DisposeDbConnection()
+        {
+            connection.Dispose();
+        }
+
         private void CreateTabelsIfNotExist()
         {
             CreateUserTable();
+            CreateStackTable();
+            CreateTradeTable();
         }
 
         private void CreateUserTable()
@@ -55,6 +62,7 @@ namespace SemesterProject.Database
             draws integer NOT NULL,
             coins integer NOT NULL,
             username character varying(255) NOT NULL,
+            password character varying(255) NOT NULL,
             bio character varying(255),
             image character varying(255),
             token character varying(100) NOT NULL,
@@ -84,7 +92,7 @@ namespace SemesterProject.Database
         private void CreateTradeTable()
         {
             using var command = new NpgsqlCommand(@"
-            CREATE TABLE IF NOT EXISTS stack(
+            CREATE TABLE IF NOT EXISTS trade(
                 tradeid uuid NOT NULL,
                 cardid uuid NOT NULL,
                 minDmg integer NOT NULL,
@@ -92,13 +100,13 @@ namespace SemesterProject.Database
                 username character varying(255) NOT NULL,
                 CONSTRAINT trade_pkey PRIMARY KEY (tradeid),
                 CONSTRAINT cardid FOREIGN KEY (cardid)
-                    REFERENCES stack (cardid) MATCH SIMPLE
+                    REFERENCES ""stack"" (cardid) MATCH SIMPLE
+                    ON UPDATE CASCADE
+                    ON DELETE CASCADE,
+                CONSTRAINT username FOREIGN KEY (username)
+                    REFERENCES ""user"" (username) MATCH SIMPLE
                     ON UPDATE CASCADE
                     ON DELETE CASCADE
-                CONSTRAINT username FOREIGN KEY (username)
-                        REFERENCES""user"" (username) MATCH SIMPLE
-                        ON UPDATE CASCADE
-                        ON DELETE CASCADE
             )", connection);
             command.ExecuteNonQuery();
         }

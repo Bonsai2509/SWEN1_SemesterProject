@@ -9,29 +9,27 @@ using System.Threading.Tasks;
 using System.Data;
 using SemesterProject.Server.Models;
 using SemesterProject.Server.Security;
+using SemesterProject.Cards;
+using System.Reflection.Metadata;
 
 namespace SemesterProject.Server.Requests.Handlers
 {
-    internal class GetHandler
+    internal class GetHandler : Handler
     {
-        private NpgsqlConnection CreateDbConnection()
-        {
-            return new PostgreSql().connection;
-        }
         public Response HandleGet(Request request)
         {
             switch (request.Target[0])
             {
                 case "users": return GetUserByUsername(request);
-                    /*case "cards": return GetCardsByToken(request);
-                    case "deck": return GetDeckByToken(request);
-                    case "stats": return GetStatsByToken(request);
-                    case "scoreboard": return GetScoreboard(request);
-                    case "tradings": return GetTradingDeals(request);*/
+                case "cards": return GetCardsByToken(request);
+                /*case "deck": return GetDeckByToken(request);
+                case "stats": return GetStatsByToken(request);
+                case "scoreboard": return GetScoreboard(request);
+                case "tradings": return GetTradingDeals(request);*/
             }
             return new ResponseBuilder().BadRequest();
         }
-        //taken from stackoverflow
+
         private Response GetUserByUsername(Request request)
         {
             string username = request.Target[1];
@@ -42,10 +40,9 @@ namespace SemesterProject.Server.Requests.Handlers
             else
             {
 
-                using var connection = CreateDbConnection();
                 try
                 {
-                    using var command = new NpgsqlCommand("SELECT \"username\", \"bio\", \"image\" FROM \"user\" WHERE \"username\"=@p1;", connection);
+                    using var command = new NpgsqlCommand(@"SELECT ""username"", ""bio"", ""image"" FROM ""user"" WHERE ""username""=@p1;", Connection);
                     command.Parameters.AddWithValue("p1", username);
                     command.Prepare();
                     using var reader = command.ExecuteReader();
@@ -56,6 +53,7 @@ namespace SemesterProject.Server.Requests.Handlers
                     string dbUsername = reader.GetString(0);
                     string dbBio = reader.GetString(1);
                     string dbImage = reader.GetString(2);
+                    Database.DisposeDbConnection();
                     if (dbUsername == null)
                     {
                         return new ResponseBuilder().NotFound();
@@ -68,6 +66,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 }
                 catch (Exception e)
                 {
+                    Database.DisposeDbConnection();
                     Console.WriteLine(e.Message);
                     return new ResponseBuilder().BadRequest();
                 }
@@ -76,10 +75,57 @@ namespace SemesterProject.Server.Requests.Handlers
 
         private Response GetCardsByToken(Request request)
         {
-
+            var security = new UserAuthorizer();
+            
+            if(!security.RequestContainsToken(request))
+            {
+                return new ResponseBuilder().Unauthorized();
+            }
+            else
+            {
+                var utils = new Utility();
+                string token = utils.ExtractTokenFromString(request.Headers["Authorization"]);
+                string username = utils.ExtractUsernameFromToken(token);
+                if(!security.AuthorizeUserByToken(request))
+                {
+                    return new ResponseBuilder().Unauthorized();
+                }
+                else
+                {
+                    var cardList = new List<CardData>();
+                    using var command = new NpgsqlCommand(@"SELECT ""cardindex"", ""cardid""  FROM ""stack"" WHERE ""username""=@p1;", Connection);
+                    command.Parameters.AddWithValue("p1", username);
+                    command.Prepare();
+                    var cardBuilder = new CardBuilder();
+                    using var reader = command.ExecuteReader();
+                    try
+                    {
+                        while(reader.Read())
+                        {
+                            int index = reader.GetInt16(0);
+                            var card = cardBuilder.generateCard(index);
+                            var cardSchema = new CardData(
+                                reader.GetGuid(1),
+                                card.Name,
+                                card.Damage
+                                );
+                            cardList.Add(cardSchema);
+                        }
+                        return new ResponseBuilder().JsonResponseCardList(cardList);
+                    }
+                    catch (ArgumentOutOfRangeException)
+                    {
+                        return new ResponseBuilder().InternalServerError();
+                    }
+                    catch(NotImplementedException)
+                    {
+                        return new ResponseBuilder().InternalServerError();
+                    }
+                }
+            }
         }
 
-        private Response GetDeckByToken(Request request)
+        /*private Response GetDeckByToken(Request request)
         {
 
         }
@@ -97,6 +143,6 @@ namespace SemesterProject.Server.Requests.Handlers
         private Response GetTradingDeals(Request request)
         {
 
-        }
+        }*/
     }
 }

@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace SemesterProject.Server.Requests.Handlers
 {
-    internal class PostHandler
+    internal class PostHandler : Handler
     {
-        public Response HandlePost(Request request)
+        /*public Response HandlePost(Request request)
         {
 
         }
@@ -47,7 +47,7 @@ namespace SemesterProject.Server.Requests.Handlers
         private Response CarryOutTrade(Request request)
         {
 
-        }
+        }*/
 
     }
 }

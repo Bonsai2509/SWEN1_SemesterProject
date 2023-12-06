@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SemesterProject.Server.Responses;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -34,7 +35,7 @@ namespace SemesterProject.Server.Requests
                 var line = reader.ReadLine();
                 if (string.IsNullOrWhiteSpace(line))
                 {
-                    return null;
+                    throw new ArgumentException();
                 }
 
                 line = line.Trim();
@@ -54,14 +55,6 @@ namespace SemesterProject.Server.Requests
                 }
                 target = targetString.Split('/');
                 target = target.Skip(1).ToArray();
-                /*Console.WriteLine(httpMethod);
-                Console.WriteLine(targetString);
-                Console.WriteLine(version);
-                Console.Write(requestParam);
-                foreach ( var item in target)
-                {
-                    Console.WriteLine(item);
-                }*/
             }
             catch (IOException e)
             {
