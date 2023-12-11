@@ -9,6 +9,10 @@ namespace SemesterProject.Server.Responses
 {
     internal class ResponseBuilder
     {
+        public Response OK()
+        {
+            return new Response(Status.Ok);
+        }
         public Response BadRequest()
         {
             return new Response(Status.BadRequest);
@@ -29,6 +33,14 @@ namespace SemesterProject.Server.Responses
         {
             return new Response(Status.InternalServerError);
         }
+        public Response Forbidden()
+        {
+            return new Response(Status.Forbidden);
+        }
+        public Response Conflict()
+        {
+            return new Response(Status.Conflict);
+        }
 
         public Response JsonResponse(object data)
         {
@@ -39,6 +51,10 @@ namespace SemesterProject.Server.Responses
             return new Response(data);
         }
         public Response JsonResponseUserScoreList(List<UserScores> data)
+        {
+            return new Response(data);
+        }
+        public Response JsonResponseUserTradeList(List<TradeDetails> data)
         {
             return new Response(data);
         }

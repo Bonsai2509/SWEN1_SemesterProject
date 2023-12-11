@@ -92,19 +92,16 @@ namespace SemesterProject.Database
         private void CreateTradeTable()
         {
             using var command = new NpgsqlCommand(@"
-            CREATE TABLE IF NOT EXISTS trade(
+            CREATE TABLE IF NOT EXISTS trades(
                 tradeid uuid NOT NULL,
                 cardid uuid NOT NULL,
-                minDmg integer NOT NULL,
-                cardtype character varying(100) NOT NULL,
-                username character varying(255) NOT NULL,
-                CONSTRAINT trade_pkey PRIMARY KEY (tradeid),
+                tradedtype character varying(100) NOT NULL,
+                tradeddmg integer NOT NULL,
+                wantedtype character varying(100) NOT NULL,
+                wanteddmg integer NOT NULL,
+                CONSTRAINT trades_pkey PRIMARY KEY (tradeid),
                 CONSTRAINT cardid FOREIGN KEY (cardid)
-                    REFERENCES ""stack"" (cardid) MATCH SIMPLE
-                    ON UPDATE CASCADE
-                    ON DELETE CASCADE,
-                CONSTRAINT username FOREIGN KEY (username)
-                    REFERENCES ""user"" (username) MATCH SIMPLE
+                    REFERENCES stack (cardid) MATCH SIMPLE
                     ON UPDATE CASCADE
                     ON DELETE CASCADE
             )", connection);

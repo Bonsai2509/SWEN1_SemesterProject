@@ -27,7 +27,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 case "deck": return GetDeckByToken(request);
                 case "stats": return GetStatsByToken(request);
                 case "scoreboard": return GetScoreboard(request);
-                //case "tradings": return GetTradingDeals(request);
+                case "tradings": return GetTradingDeals(request);
             }
             return new ResponseBuilder().BadRequest();
         }
@@ -152,8 +152,9 @@ namespace SemesterProject.Server.Requests.Handlers
                 var cardList = new List<CardData>();
                 try
                 {
-                    using var command = new NpgsqlCommand(@"SELECT ""cardindex"", ""cardid""  FROM ""stack"" WHERE ""token""=@p1 AND ""inDeck""=@p2;", Connection);
-                    command.Parameters.AddWithValue("p1", token);
+                    string username = utils.ExtractUsernameFromToken(token);
+                    using var command = new NpgsqlCommand(@"SELECT ""cardindex"", ""cardid""  FROM ""stack"" WHERE ""username""=@p1 AND ""inDeck""=@p2;", Connection);
+                    command.Parameters.AddWithValue("p1", username);
                     command.Parameters.AddWithValue("p2", true);
                     command.Prepare();
                     var cardBuilder = new CardBuilder();
@@ -305,9 +306,50 @@ namespace SemesterProject.Server.Requests.Handlers
             }
         }
 
-        /*private Response GetTradingDeals(Request request)
+        private Response GetTradingDeals(Request request)
         {
-
-        }*/
+            var security = new UserAuthorizer();
+            if (!security.AuthorizeUserByToken(request))
+            {
+                return new ResponseBuilder().Unauthorized();
+            }
+            else
+            {
+                var tradeList = new List<TradeDetails>();
+                try
+                {
+                    int tradeCount = 0;
+                    using var command = new NpgsqlCommand(@"SELECT ""tradeid"", ""cardid"", ""tradedtype"", ""tradeddmg"" FROM ""trades"";", Connection);
+                    command.Prepare();
+                    using var reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        tradeCount++;
+                        var trade = new TradeDetails(
+                            reader.GetGuid(0),
+                            reader.GetGuid(1),
+                            reader.GetString(2),
+                            reader.GetInt32(3)
+                            );
+                        tradeList.Add(trade);
+                    }
+                    if (tradeCount == 0)
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().NotFound();
+                    }
+                    else
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().JsonResponseUserTradeList(tradeList);
+                    }
+                }
+                catch (Exception)
+                {
+                    return new ResponseBuilder().InternalServerError();
+                }
+                finally { Database.DisposeDbConnection(); }
+            }
+        }
     }
 }

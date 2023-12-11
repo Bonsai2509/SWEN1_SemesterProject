@@ -64,7 +64,9 @@ namespace SemesterProject.Server
             Console.WriteLine(response.Status);
             Console.WriteLine(response.StatusString);
             Console.WriteLine(response.Payload);
-            //send response
+            new ResponseSender().SendResponse(response, client);
+
+            client.Close();
         }
     }
 }
