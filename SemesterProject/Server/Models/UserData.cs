@@ -12,9 +12,9 @@ namespace SemesterProject.Server.Models
         public string Bio { get; }
         public string Image { get; }
 
-        public UserData(string username, string bio, string image)
+        public UserData(string name, string bio, string image)
         {
-            Name = username;
+            Name = name;
             Bio = bio;
             Image = image;
         }

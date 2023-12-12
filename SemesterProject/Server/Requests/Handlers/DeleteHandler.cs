@@ -31,12 +31,14 @@ namespace SemesterProject.Server.Requests.Handlers
             var security = new UserAuthorizer();
             if (!security.AuthorizeUserByToken(request))
             {
+                Database.DisposeDbConnection();
                 return new ResponseBuilder().Unauthorized();
             }
             else
             {
                 if(request.Target.Length != 2)
                 {
+                    Database.DisposeDbConnection();
                     return new ResponseBuilder().BadRequest();
                 }
                 string idString = request.Target[1];
@@ -51,6 +53,7 @@ namespace SemesterProject.Server.Requests.Handlers
                     using var reader = command.ExecuteReader();
                     if(!reader.Read())
                     {
+                        Database.DisposeDbConnection();
                         return new ResponseBuilder().NotFound();
                     }
                     else
@@ -72,7 +75,8 @@ namespace SemesterProject.Server.Requests.Handlers
                         command2.Prepare();
                         using var reader2 = command2.ExecuteReader();
                         if(!reader2.Read())
-                        { 
+                        {
+                            Database.DisposeDbConnection();
                             return new ResponseBuilder().Forbidden(); 
                         }
                         else
@@ -85,10 +89,12 @@ namespace SemesterProject.Server.Requests.Handlers
                             var affectedRows = command3.ExecuteNonQuery();
                             if (affectedRows == 0)
                             {
+                                Database.DisposeDbConnection();
                                 return new ResponseBuilder().Conflict();
                             }
                             else
                             {
+                                Database.DisposeDbConnection();
                                 return new ResponseBuilder().OK();
                             }
                         }
