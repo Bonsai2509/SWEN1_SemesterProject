@@ -53,7 +53,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
-                    return new ResponseBuilder().BadRequest();
+                    return new ResponseBuilder().InternalServerError();
                 }
                 finally { Database.DisposeDbConnection(); }
             }
@@ -138,7 +138,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
-                    return new ResponseBuilder().BadRequest();
+                    return new ResponseBuilder().InternalServerError();
                 }
                 finally { Database.DisposeDbConnection(); }
             }

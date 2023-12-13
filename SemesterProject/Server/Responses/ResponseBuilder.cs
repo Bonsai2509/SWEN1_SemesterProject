@@ -41,6 +41,10 @@ namespace SemesterProject.Server.Responses
         {
             return new Response(Status.Conflict);
         }
+        public Response Created()
+        {
+            return new Response(Status.Created);
+        }
 
         public Response JsonResponse(object data)
         {

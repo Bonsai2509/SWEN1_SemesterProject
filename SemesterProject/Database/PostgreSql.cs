@@ -50,6 +50,7 @@ namespace SemesterProject.Database
             CreateUserTable();
             CreateStackTable();
             CreateTradeTable();
+            CreatePackageTable();
         }
 
         private void CreateUserTable()
@@ -66,6 +67,7 @@ namespace SemesterProject.Database
             bio character varying(255),
             image character varying(255),
             token character varying(100) NOT NULL,
+            isAdmin boolean NOT NULL,
             CONSTRAINT user_pkey PRIMARY KEY (username)
                 )", connection);
             command.ExecuteNonQuery();
@@ -104,6 +106,22 @@ namespace SemesterProject.Database
                     REFERENCES stack (cardid) MATCH SIMPLE
                     ON UPDATE CASCADE
                     ON DELETE CASCADE
+            )", connection);
+            command.ExecuteNonQuery();
+        }
+
+        private void CreatePackageTable()
+        {
+            using var command = new NpgsqlCommand(@"
+            CREATE TABLE IF NOT EXISTS ""package""
+            (
+                packageid uuid NOT NULL,
+                card1id uuid NOT NULL,
+                card2id uuid NOT NULL,
+                card3id uuid NOT NULL,
+                card4id uuid NOT NULL,
+                card5id uuid NOT NULL,
+                CONSTRAINT package_pkey PRIMARY KEY (packageid)
             )", connection);
             command.ExecuteNonQuery();
         }
