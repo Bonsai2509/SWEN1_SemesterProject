@@ -7,6 +7,7 @@ using SemesterProject.Server.Security;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,7 +23,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 case "users": return PostUser(request);
                 case "sessions": return PostSession(request);
                 case "packages": return PostPackages(request);
-                //case "transactions": return PostTransaction(request);
+                case "transactions": return PostTransaction(request);
                 //case "battles": return PostBattle(request);
                 //case "tradings": return PostTrade(request);
             }
@@ -195,9 +196,89 @@ namespace SemesterProject.Server.Requests.Handlers
             }
         }
 
-        /*private Response PostTransaction(Request request) 
+        private Response PostTransaction(Request request)
         {
-            
+            if (request.Target[1] != "packages") return new ResponseBuilder().BadRequest();
+            if (!(new UserAuthorizer().AuthorizeUserByToken(request)))
+            {
+                Database.DisposeDbConnection();
+                return new ResponseBuilder().Unauthorized();
+            }
+            else
+            {
+                Utility utils = new Utility();
+                string token = utils.ExtractTokenFromString(request.Headers["Authorization"]);
+                try
+                {
+                    //check if user has enough coins
+                    using var getUserCoins = new NpgsqlCommand(@"SELECT ""coins"" FROM ""user"" WHERE ""token""=@p1;", Connection);
+                    getUserCoins.Parameters.AddWithValue("p1", token);
+                    using var reader = getUserCoins.ExecuteReader();
+                    if (!reader.Read())
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().Unauthorized();
+                    }
+                    int coins = reader.GetInt16(0);
+                    if (coins < 5) return new ResponseBuilder().Forbidden();
+                    getUserCoins.Dispose();
+                    reader.Close();
+
+                    //get a package
+                    using var selectPackage = new NpgsqlCommand(@"SELECT ""packageid"", ""card1id"", ""card2id"", ""card3id"", ""card4id"", ""card5id"" FROM ""package"" LIMIT 1;", Connection);
+                    using var reader2 = selectPackage.ExecuteReader();
+                    if (!reader.Read())
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().NotFound();
+                    }
+                    Guid packageId = reader2.GetGuid(0);
+                    Guid[] cardIds = { reader2.GetGuid(1), reader2.GetGuid(2), reader2.GetGuid(3), reader2.GetGuid(4), reader2.GetGuid(5) };
+                    selectPackage.Dispose();
+                    reader2.Close();
+
+                    //update cards in stack
+                    string username = utils.ExtractUsernameFromToken(token);
+                    using var transaction = Connection.BeginTransaction();
+                    using var updateCardOwner = new NpgsqlCommand(@"UPDATE ""stack"" SET ""username""=@p1 WHERE ""username""=@p2 AND (""cardid""=@p3 OR ""cardid""=@p4 OR ""cardid""=@p5 OR ""cardid""=@p6 OR ""cardid""=@p7);", Connection);
+                    updateCardOwner.Parameters.AddWithValue("p1", username);
+                    updateCardOwner.Parameters.AddWithValue("p2", "admin");
+                    updateCardOwner.Parameters.AddWithValue("p3", cardIds[0]);
+                    updateCardOwner.Parameters.AddWithValue("p4", cardIds[1]);
+                    updateCardOwner.Parameters.AddWithValue("p5", cardIds[2]);
+                    updateCardOwner.Parameters.AddWithValue("p6", cardIds[3]);
+                    updateCardOwner.Parameters.AddWithValue("p7", cardIds[4]);
+                    int affected = updateCardOwner.ExecuteNonQuery();
+                    if (affected != 5)
+                    {
+                        transaction.Rollback();
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().InternalServerError();
+                    }
+                    updateCardOwner.Dispose();
+
+                    //delete package
+                    using var deletePackage = new NpgsqlCommand(@"DELETE FROM ""package"" WHERE ""packageid""=@p1;", Connection);
+                    deletePackage.Parameters.AddWithValue("p1", packageId);
+                    deletePackage.Prepare();
+                    int affected2 = deletePackage.ExecuteNonQuery();
+                    if (affected2 == 0)
+                    {
+                        transaction.Rollback();
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().InternalServerError();
+                    }
+                    transaction.Commit();
+                    Database.DisposeDbConnection();
+                    return new ResponseBuilder().OK();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    return new ResponseBuilder().InternalServerError();
+                }
+                finally { Database.DisposeDbConnection(); }
+            }
         }
 
         /*private Response PostBattle(Request request)
