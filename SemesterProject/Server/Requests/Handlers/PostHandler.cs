@@ -1,11 +1,13 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Npgsql;
+using SemesterProject.Cards;
 using SemesterProject.Server.Models;
 using SemesterProject.Server.Responses;
 using SemesterProject.Server.Security;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
@@ -25,7 +27,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 case "packages": return PostPackages(request);
                 case "transactions": return PostTransaction(request);
                 //case "battles": return PostBattle(request);
-                //case "tradings": return PostTrade(request);
+                case "tradings": return PostTrade(request);
             }
             return new ResponseBuilder().BadRequest();
         }
@@ -40,6 +42,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 using var reader = checkIfUserExists.ExecuteReader();
                 if (reader.Read())
                 {
+                    Database.DisposeDbConnection();
                     return new ResponseBuilder().Conflict();
                 }
                 checkIfUserExists.Dispose();
@@ -57,11 +60,12 @@ namespace SemesterProject.Server.Requests.Handlers
                 command.Parameters.AddWithValue("p8", "no image yet");
                 command.Parameters.AddWithValue("p9", $"{userCred.Username}-mtcg");
                 command.Parameters.AddWithValue("p10", userCred.Password);
-                command.Parameters.AddWithValue("p11", (userCred.Username=="admin" ? true : false));
+                command.Parameters.AddWithValue("p11", (userCred.Username == "admin" ? true : false));
                 command.Prepare();
                 int affected = command.ExecuteNonQuery();
                 if (affected == 0)
                 {
+                    Database.DisposeDbConnection();
                     return new ResponseBuilder().InternalServerError();
                 }
                 Database.DisposeDbConnection();
@@ -86,6 +90,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 using var reader = checkIfUserExists.ExecuteReader();
                 if (!reader.Read())
                 {
+                    Database.DisposeDbConnection();
                     return new ResponseBuilder().Unauthorized();
                 }
                 string dbResult = reader.GetString(0);
@@ -120,7 +125,7 @@ namespace SemesterProject.Server.Requests.Handlers
                     checkIfUserIsAdmin.Parameters.AddWithValue("p2", true);
                     checkIfUserIsAdmin.Prepare();
                     using var reader = checkIfUserIsAdmin.ExecuteReader();
-                    if(!reader.Read())
+                    if (!reader.Read())
                     {
                         Database.DisposeDbConnection();
                         return new ResponseBuilder().Forbidden();
@@ -129,7 +134,7 @@ namespace SemesterProject.Server.Requests.Handlers
                     reader.Close();
 
                     PackageCard[] cards = JsonConvert.DeserializeObject<PackageCard[]>(request.Payload);
-                    if(cards.Length != 5)
+                    if (cards.Length != 5)
                     {
                         Database.DisposeDbConnection();
                         return new ResponseBuilder().BadRequest();
@@ -143,12 +148,13 @@ namespace SemesterProject.Server.Requests.Handlers
                     checkIfAnyCardExists.Parameters.AddWithValue("p4", Guid.Parse(cards[3].Id));
                     checkIfAnyCardExists.Parameters.AddWithValue("p5", Guid.Parse(cards[4].Id));
                     using var reader2 = checkIfAnyCardExists.ExecuteReader();
-                    if(reader.Read())
+                    if (reader2.Read())
                     {
+                        Database.DisposeDbConnection();
                         return new ResponseBuilder().Conflict();
                     }
                     checkIfAnyCardExists.Dispose();
-                    reader.Close();
+                    reader2.Close();
 
                     //create package
                     using var createPackage = new NpgsqlCommand(@"INSERT INTO ""package"" (""packageid"", ""card1id"", ""card2id"", ""card3id"", ""card4id"", ""card5id"") VALUES (@p1, @p2, @p3, @p4, @p5, @p6);", Connection);
@@ -284,29 +290,233 @@ namespace SemesterProject.Server.Requests.Handlers
         /*private Response PostBattle(Request request)
         {
 
-        }
+        }*/
 
-        /*private Response PostTrade(Request request) 
+        private Response PostTrade(Request request)
         {
-            if(request.Target.count>1)
+            if (request.Target.Count() > 1)
             {
-                CarryOutTrade
+                return CarryOutTrade(request);
             }
             else
             {
-                
+                return CreateTrade(request);
             }
         }
 
-        /*private Response CreateTrade(Request request) 
+        private Response CreateTrade(Request request)
         {
-            
+            if (!(new UserAuthorizer().AuthorizeUserByToken(request)))
+            {
+                Database.DisposeDbConnection();
+                return new ResponseBuilder().Unauthorized();
+            }
+            else
+            {
+                Utility utils = new Utility();
+                string token = utils.ExtractTokenFromString(request.Headers["Authorization"]);
+                string username = utils.ExtractUsernameFromToken(token);
+                try
+                {
+                    Trade trade = JsonConvert.DeserializeObject<Trade>(request.Payload);
+
+                    //check if card is available for trade and is owned by user
+                    using var checkCardAvailable = new NpgsqlCommand(@"SELECT ""cardindex"" FROM ""stack"" WHERE ""cardid""=@p1 AND ""inDeck""=@p2 AND ""username""=@p3;", Connection);
+                    checkCardAvailable.Parameters.AddWithValue("p1", trade.CardToTrade);
+                    checkCardAvailable.Parameters.AddWithValue("p2", false);
+                    checkCardAvailable.Parameters.AddWithValue("p3", username);
+                    using var reader = checkCardAvailable.ExecuteReader();
+                    if (!reader.Read())
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().Forbidden();
+                    }
+                    int cardIndex = reader.GetInt32(0);
+                    checkCardAvailable.Dispose();
+                    reader.Close();
+
+                    //check if trading deal already exists
+                    using var checkDealExists = new NpgsqlCommand(@"SELECT * FROM ""trades"" WHERE ""tradeid""=@p1;", Connection);
+                    checkDealExists.Parameters.AddWithValue("p1", trade.Id);
+                    using var reader2 = checkDealExists.ExecuteReader();
+                    if (reader2.Read())
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().Conflict();
+                    }
+                    checkDealExists.Dispose();
+                    reader2.Close();
+
+                    using var transaction = Connection.BeginTransaction();
+                    {
+                        //create trade
+                        Card cardToTrade = new CardBuilder().generateCard(cardIndex);
+                        using var createTrade = new NpgsqlCommand(@"INSERT INTO ""trades"" (""tradeid"", ""cardid"", ""tradedtype"", ""tradeddmg"", ""wantedtype"", ""wanteddmg"") VALUES (@p1, @p2, @p3, @p4, @p5, @p6);", Connection);
+                        createTrade.Parameters.AddWithValue("p1", trade.Id);
+                        createTrade.Parameters.AddWithValue("p2", trade.CardToTrade);
+                        createTrade.Parameters.AddWithValue("p3", cardToTrade.CardType.ToString());
+                        createTrade.Parameters.AddWithValue("p4", cardToTrade.Damage);
+                        createTrade.Parameters.AddWithValue("p5", trade.Type);
+                        createTrade.Parameters.AddWithValue("p6", trade.MinimumDamage);
+                        int affected = createTrade.ExecuteNonQuery();
+                        if (affected == 0)
+                        {
+                            Database.DisposeDbConnection();
+                            return new ResponseBuilder().InternalServerError();
+                        }
+                        createTrade.Dispose();
+
+                        //update card in stack
+                        using var updateCardOwner = new NpgsqlCommand(@"UPDATE ""stack"" SET ""inTrade""=@p1 WHERE ""cardid""=@p2;", Connection);
+                        updateCardOwner.Parameters.AddWithValue("p1", true);
+                        updateCardOwner.Parameters.AddWithValue("p2", trade.CardToTrade);
+                        int affected2 = updateCardOwner.ExecuteNonQuery();
+                        if (affected2 != 1)
+                        {
+                            transaction.Rollback();
+                            Database.DisposeDbConnection();
+                            return new ResponseBuilder().InternalServerError();
+                        }
+                        transaction.Commit();
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().Created();
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    return new ResponseBuilder().InternalServerError();
+                }
+                finally { Database.DisposeDbConnection(); }
+            }
         }
 
-        /*private Response CarryOutTrade(Request request)
+        private Response CarryOutTrade(Request request)
         {
+            if (!(new UserAuthorizer().AuthorizeUserByToken(request)))
+            {
+                Database.DisposeDbConnection();
+                return new ResponseBuilder().Unauthorized();
+            }
+            else
+            {
+                Utility utils = new Utility();
+                string token = utils.ExtractTokenFromString(request.Headers["Authorization"]);
+                string username = utils.ExtractUsernameFromToken(token);
+                try
+                {
+                    Guid tradingDealId = Guid.Parse(request.Target[1]);
+                    //check if trade exist
+                    using var checkIfTradeExists = new NpgsqlCommand(@"SELECT ""cardid"", ""wantedtype"", ""wanteddmg"" FROM ""trades"" WHERE ""tradeid""=@p1;", Connection);
+                    checkIfTradeExists.Parameters.AddWithValue("p1", tradingDealId);
+                    using var reader = checkIfTradeExists.ExecuteReader();
+                    if (!reader.Read())
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().NotFound();
+                    }
+                    Guid cardInTradeId = reader.GetGuid(0);
+                    string cardInTradeType = reader.GetString(1);
+                    float cardInTradeDmg = reader.GetFloat(2);
+                    checkIfTradeExists.Dispose();
+                    reader.Close();
 
-        }*/
+                    //get Username of Trade
+                    using var getUsernameOfTrade = new NpgsqlCommand(@"SELECT ""username"" FROM ""stack"" WHERE ""cardid""=@p1;", Connection);
+                    getUsernameOfTrade.Parameters.AddWithValue("p1", cardInTradeId);
+                    using var reader2 = getUsernameOfTrade.ExecuteReader();
+                    if (!reader2.Read())
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().NotFound();
+                    }
+                    string usernameInTrade = reader.GetString(0);
+                    getUsernameOfTrade.Dispose();
+                    reader2.Close();
+
+                    if (username == usernameInTrade) { return new ResponseBuilder().Conflict(); }
+
+                    //check if card is owned by user and not in deck
+                    string cardId = request.Payload.Trim('"');
+                    Guid cardToTradeId = Guid.Parse(cardId);
+                    using var checkCardAvailable = new NpgsqlCommand(@"SELECT ""cardindex"" FROM ""stack"" WHERE ""cardid""=@p1 AND ""inDeck""=@p2 AND ""username""=@p3;", Connection);
+                    checkCardAvailable.Parameters.AddWithValue("p1", cardToTradeId);
+                    checkCardAvailable.Parameters.AddWithValue("p2", false);
+                    checkCardAvailable.Parameters.AddWithValue("p3", username);
+                    using var reader3 = checkCardAvailable.ExecuteReader();
+                    if (!reader3.Read())
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().Forbidden();
+                    }
+                    int cardIndex = reader3.GetInt32(0);
+                    checkCardAvailable.Dispose();
+                    reader3.Close();
+
+                    Card cardToTrade = new CardBuilder().generateCard(cardIndex);
+                    if (cardInTradeType != cardToTrade.CardType.ToString() || cardToTrade.Damage < cardInTradeDmg)
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().Forbidden();
+                    }
+
+                    //carry out trade
+                    using var transaction = Connection.BeginTransaction();
+                    {
+                        using var carryOutTrade = new NpgsqlBatch(Connection)
+                        {
+                            BatchCommands =
+                        {
+                            new NpgsqlBatchCommand(@"UPDATE ""stack"" SET ""inTrade""=@p1, ""username""=@p2 WHERE ""cardid""=@p3;")
+                            {
+                                Parameters =
+                                {
+                                    new NpgsqlParameter("p1", false),
+                                    new NpgsqlParameter("p2", username),
+                                    new NpgsqlParameter("p3", cardInTradeId)
+                                }
+                            },
+                            new NpgsqlBatchCommand(@"UPDATE ""stack"" SET ""username""=@p1 WHERE ""cardid""=@p2;")
+                            {
+                                Parameters =
+                                {
+                                    new NpgsqlParameter("p1", usernameInTrade),
+                                    new NpgsqlParameter("p2", cardToTradeId),
+                                }
+                            }
+                        }
+                        };
+                        int affected = carryOutTrade.ExecuteNonQuery();
+
+                        if (affected != 2)
+                        { 
+                            transaction.Rollback();
+                            Database.DisposeDbConnection(); 
+                            return new ResponseBuilder().InternalServerError(); 
+                        }
+                        //delete package
+                        using var deleteTrade = new NpgsqlCommand(@"DELETE FROM ""trades"" WHERE ""tradeid""=@p1;", Connection);
+                        deleteTrade.Parameters.AddWithValue("p1", tradingDealId);
+                        int affected2 = deleteTrade.ExecuteNonQuery();
+                        if (affected2 == 0)
+                        {
+                            transaction.Rollback();
+                            Database.DisposeDbConnection();
+                            return new ResponseBuilder().InternalServerError();
+                        }
+                        transaction.Commit();
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().OK();
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    return new ResponseBuilder().InternalServerError();
+                }
+                finally { Database.DisposeDbConnection(); }
+            }
+        }
 
     }
 }

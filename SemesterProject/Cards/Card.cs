@@ -27,9 +27,6 @@ namespace SemesterProject.Cards
             Element = elem;
         }
         public ECardType CardType { get; }
-
-
-
         public string Name { get; private set; }
         public int Damage { get; }
         public EDamageType Element { get; set; }
