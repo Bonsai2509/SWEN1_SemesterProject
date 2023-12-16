@@ -8,10 +8,12 @@ using SemesterProject.Server.Security;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace SemesterProject.Server.Requests.Handlers
 {
@@ -26,7 +28,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 case "sessions": return PostSession(request);
                 case "packages": return PostPackages(request);
                 case "transactions": return PostTransaction(request);
-                //case "battles": return PostBattle(request);
+                case "battles": return PostBattle(request);
                 case "tradings": return PostTrade(request);
             }
             return new ResponseBuilder().BadRequest();
@@ -49,7 +51,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 reader.Close();
 
                 //create user in db
-                using var command = new NpgsqlCommand(@"INSERT INTO ""user"" (""elo"", ""wins"", ""loses"", ""draws"", ""coins"", ""username"", ""bio"", ""image"", ""token"", ""password"", ""isAdmin"") VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11);", Connection);
+                using var command = new NpgsqlCommand(@"INSERT INTO ""user"" (""elo"", ""wins"", ""loses"", ""draws"", ""coins"", ""username"", ""bio"", ""image"", ""token"", ""password"", ""isAdmin"", ""hasDeck"") VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12);", Connection);
                 command.Parameters.AddWithValue("p1", 1000);
                 command.Parameters.AddWithValue("p2", 0);
                 command.Parameters.AddWithValue("p3", 0);
@@ -61,6 +63,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 command.Parameters.AddWithValue("p9", $"{userCred.Username}-mtcg");
                 command.Parameters.AddWithValue("p10", userCred.Password);
                 command.Parameters.AddWithValue("p11", (userCred.Username == "admin" ? true : false));
+                command.Parameters.AddWithValue("p11", false);
                 command.Prepare();
                 int affected = command.ExecuteNonQuery();
                 if (affected == 0)
@@ -263,12 +266,25 @@ namespace SemesterProject.Server.Requests.Handlers
                     }
                     updateCardOwner.Dispose();
 
+                    //update coins in user
+                    using var updateUserCoins = new NpgsqlCommand(@"UPDATE ""user"" SET ""coins""=@p1 WHERE ""username""=@p2;", Connection);
+                    updateUserCoins.Parameters.AddWithValue("p1", coins -= 5);
+                    updateUserCoins.Parameters.AddWithValue("p2", username);
+                    int affected2 = updateUserCoins.ExecuteNonQuery();
+                    if (affected2 != 1)
+                    {
+                        transaction.Rollback();
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().InternalServerError();
+                    }
+                    updateUserCoins.Dispose();
+
                     //delete package
                     using var deletePackage = new NpgsqlCommand(@"DELETE FROM ""package"" WHERE ""packageid""=@p1;", Connection);
                     deletePackage.Parameters.AddWithValue("p1", packageId);
                     deletePackage.Prepare();
-                    int affected2 = deletePackage.ExecuteNonQuery();
-                    if (affected2 == 0)
+                    int affected3 = deletePackage.ExecuteNonQuery();
+                    if (affected3 == 0)
                     {
                         transaction.Rollback();
                         Database.DisposeDbConnection();
@@ -287,10 +303,145 @@ namespace SemesterProject.Server.Requests.Handlers
             }
         }
 
-        /*private Response PostBattle(Request request)
+        private Response PostBattle(Request request)
         {
+            if (!(new UserAuthorizer().AuthorizeUserByToken(request)))
+            {
+                Database.DisposeDbConnection();
+                return new ResponseBuilder().Unauthorized();
+            }
+            else
+            {
+                Utility utils = new Utility();
+                string token = utils.ExtractTokenFromString(request.Headers["Authorization"]);
+                try
+                {
+                    //get player from db
+                    using var getPlayer = new NpgsqlCommand(@"SELECT ""elo"", ""wins"", ""loses"", ""draws"", ""username"" FROM ""user"" WHERE ""token""=@p1;", Connection);
+                    getPlayer.Parameters.AddWithValue("p1", token);
+                    using var reader = getPlayer.ExecuteReader();
+                    if (!reader.Read())
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().NotFound();
+                    }
+                    double playerElo = reader.GetDouble(0);
+                    int playerWins = reader.GetInt32(1);
+                    int playerLoses = reader.GetInt32(2);
+                    int playerDraws = reader.GetInt32(3);
+                    string playerUsername = reader.GetString(4);
+                    getPlayer.Dispose();
+                    reader.Close();
 
-        }*/
+                    //get player deck from db
+                    List<Card> playerDeck = getDeckFromDb(playerUsername);
+                    if (playerDeck.Count != 4) { Database.DisposeDbConnection(); return new ResponseBuilder().Conflict(); }
+
+                    //get opponent from db
+                    double opponentElo = 0;
+                    int opponentWins = 0;
+                    int opponentLoses = 0;
+                    int opponentDraws = 0;
+                    string opponentUsername = null;
+                    using var getOpponent = new NpgsqlCommand(@"SELECT ""elo"", ""wins"", ""loses"", ""draws"", ""username"" FROM ""user"" WHERE ""elo"">=@p1 AND ""hasDeck""=@p2 AND ""isAdmin""=@p3 AND ""username""!=@p4 ORDER BY ""elo"" ASC LIMIT 1;", Connection);
+                    getOpponent.Parameters.AddWithValue("p1", playerElo);
+                    getOpponent.Parameters.AddWithValue("p2", true);
+                    getOpponent.Parameters.AddWithValue("p3", false);
+                    getOpponent.Parameters.AddWithValue("p4", playerUsername);
+                    using var reader3 = getOpponent.ExecuteReader();
+                    if (!reader3.Read())
+                    {
+                        getOpponent.Dispose();
+                        reader3.Close();
+                        using var getOpponentAlternative = new NpgsqlCommand(@"SELECT ""elo"", ""wins"", ""loses"", ""draws"", ""username"" FROM ""user"" WHERE ""elo""<@p1 AND ""hasDeck""=@p2 AND ""isAdmin""=@p3 AND ""username""!=@p4 ORDER BY ""elo"" DESC LIMIT 1;", Connection);
+                        getOpponentAlternative.Parameters.AddWithValue("p1", playerElo);
+                        getOpponentAlternative.Parameters.AddWithValue("p2", true);
+                        getOpponentAlternative.Parameters.AddWithValue("p3", false);
+                        getOpponentAlternative.Parameters.AddWithValue("p4", playerUsername);
+                        using var reader4 = getOpponentAlternative.ExecuteReader();
+                        if (!reader4.Read())
+                        {
+                            Database.DisposeDbConnection();
+                            return new ResponseBuilder().Conflict();
+                        }
+                        else
+                        {
+                            opponentElo = reader4.GetDouble(0);
+                            opponentWins = reader4.GetInt32(1);
+                            opponentLoses = reader4.GetInt32(2);
+                            opponentDraws = reader4.GetInt32(3);
+                            opponentUsername = reader4.GetString(4);
+                            getOpponentAlternative.Dispose();
+                            reader4.Close();
+                        }
+                    }
+                    else
+                    {
+                        opponentElo = reader3.GetDouble(0);
+                        opponentWins = reader3.GetInt32(1);
+                        opponentLoses = reader3.GetInt32(2);
+                        opponentDraws = reader3.GetInt32(3);
+                        opponentUsername = reader3.GetString(4);
+                    }
+                    getOpponent.Dispose();
+                    reader3.Close();
+
+                    Console.WriteLine(opponentUsername);
+                    //get opponent deck from db
+                    List<Card> opponentDeck = getDeckFromDb(opponentUsername);
+                    if (opponentDeck.Count != 4) { Database.DisposeDbConnection(); return new ResponseBuilder().Conflict(); }
+
+                    Game game = new Game(new Player(playerElo, playerWins, playerLoses, playerDraws, playerUsername, playerDeck), new Player(opponentElo, opponentWins, opponentLoses, opponentDraws, opponentUsername, opponentDeck));
+                    game.Battle();
+
+                    //update player stats in user
+                    using var updateUserStats = new NpgsqlCommand(@"UPDATE ""user"" SET ""wins""=@p1, ""loses""=@p2, ""draws""=@p3, ""elo""=@p4 WHERE ""username""=@p5;", Connection);
+                    updateUserStats.Parameters.AddWithValue("p1", game.Player.Wins);
+                    updateUserStats.Parameters.AddWithValue("p2", game.Player.Loses);
+                    updateUserStats.Parameters.AddWithValue("p3", game.Player.Draws);
+                    updateUserStats.Parameters.AddWithValue("p4", game.Player.Elo);
+                    updateUserStats.Parameters.AddWithValue("p5", playerUsername);
+                    int affected2 = updateUserStats.ExecuteNonQuery();
+                    if (affected2 != 1)
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().InternalServerError();
+                    }
+                    updateUserStats.Dispose();
+
+                    if (game.battleLog != null)
+                    {
+                        return new ResponseBuilder().PlainTextResponse(game.battleLog);
+                    }
+                    else { return new ResponseBuilder().InternalServerError(); }
+                }
+                /*catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    return new ResponseBuilder().InternalServerError();
+                }*/
+                finally { Database.DisposeDbConnection(); }
+            }
+        }
+
+        private List<Card> getDeckFromDb(string username)
+        {
+            var playerDeck = new List<Card>();
+            using var getPlayerDeck = new NpgsqlCommand(@"SELECT ""cardindex"" FROM ""stack"" WHERE ""username""=@p1 AND ""inDeck""=@p2;", Connection);
+            getPlayerDeck.Parameters.AddWithValue("p1", username);
+            getPlayerDeck.Parameters.AddWithValue("p2", true);
+            using var reader = getPlayerDeck.ExecuteReader();
+            var cardBuilder = new CardBuilder();
+            while (reader.Read())
+            {
+                int index = reader.GetInt16(0);
+                var card = cardBuilder.generateCard(index);
+                playerDeck.Add(card);
+            }
+            getPlayerDeck.Dispose();
+            reader.Close();
+            return playerDeck;
+        }
 
         private Response PostTrade(Request request)
         {
@@ -489,10 +640,10 @@ namespace SemesterProject.Server.Requests.Handlers
                         int affected = carryOutTrade.ExecuteNonQuery();
 
                         if (affected != 2)
-                        { 
+                        {
                             transaction.Rollback();
-                            Database.DisposeDbConnection(); 
-                            return new ResponseBuilder().InternalServerError(); 
+                            Database.DisposeDbConnection();
+                            return new ResponseBuilder().InternalServerError();
                         }
                         //delete package
                         using var deleteTrade = new NpgsqlCommand(@"DELETE FROM ""trades"" WHERE ""tradeid""=@p1;", Connection);

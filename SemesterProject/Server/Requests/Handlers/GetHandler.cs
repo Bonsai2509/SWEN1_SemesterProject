@@ -102,6 +102,7 @@ namespace SemesterProject.Server.Requests.Handlers
                         var cardSchema = new CardData(
                             reader.GetGuid(1),
                             card.Name,
+                            card.Description,
                             card.Damage
                             );
                         cardList.Add(cardSchema);
@@ -166,6 +167,7 @@ namespace SemesterProject.Server.Requests.Handlers
                         var cardSchema = new CardData(
                             reader.GetGuid(1),
                             card.Name,
+                            card.Description,
                             card.Damage
                             );
                         cardList.Add(cardSchema);

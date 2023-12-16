@@ -79,7 +79,6 @@ namespace SemesterProject.Server.Requests.Handlers
                 {
                     cardUUIDs[i] = cardUUIDs[i].Trim(' ').Trim('"');
                 }
-                Console.WriteLine(cardUUIDs[0]);
                 try
                 {
                     int cardCount = 0;
@@ -98,10 +97,11 @@ namespace SemesterProject.Server.Requests.Handlers
                     {
                         cardCount++;
                     }
-                    Console.WriteLine(cardCount);
                     if(cardCount != cardUUIDs.Length) { Database.DisposeDbConnection(); return new ResponseBuilder().Forbidden(); }
                     reader.Close();
                     command.Dispose();
+
+                    using var transaction = Connection.BeginTransaction();
                     using var command2 = new NpgsqlBatch(Connection)
                     {
                         BatchCommands =
@@ -125,13 +125,21 @@ namespace SemesterProject.Server.Requests.Handlers
                                     new NpgsqlParameter("p5", Guid.Parse(cardUUIDs[3])),
                                     new NpgsqlParameter("p6", username)
                                 }
+                            },
+                            new NpgsqlBatchCommand(@"UPDATE ""user"" SET ""hasDeck""=@p1 WHERE ""username"" = @p2;")
+                            {
+                                Parameters =
+                                {
+                                    new NpgsqlParameter("p1", true),
+                                    new NpgsqlParameter("p2", username)
+                                }
                             }
                         }
                     };
                     int affected = command2.ExecuteNonQuery();
 
-                    if(affected != 8){ Database.DisposeDbConnection(); return new ResponseBuilder().InternalServerError(); }
-
+                    if(affected != 9 && affected != 5){ transaction.Rollback(); Database.DisposeDbConnection(); return new ResponseBuilder().InternalServerError(); }
+                    transaction.Commit();
                     Database.DisposeDbConnection();
                     return new ResponseBuilder().OK();
                 }

@@ -8,14 +8,16 @@ namespace SemesterProject.Server.Models
 {
     internal class CardData
     {
-        public CardData(Guid cardId, string cardName, float cardDamage)
+        public CardData(Guid cardId, string cardName, string cardDescription, float cardDamage)
         {
             CardId = cardId;
             CardName = cardName;
+            CardDescription = cardDescription;
             CardDamage = cardDamage;
         }
         public Guid CardId { get; }
         public string CardName { get; set; }
+        public string CardDescription { get; set; }
         public float CardDamage { get; }
     }
 }

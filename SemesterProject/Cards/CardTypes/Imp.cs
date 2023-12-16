@@ -1,14 +1,16 @@
-﻿using System;
+﻿using Microsoft.VisualBasic;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace SemesterProject.Cards.CardTypes
 {
-    internal class StealCard : Card
+    internal class Imp : Card
     {
-        public StealCard(ECardType type, string name, string description, int damage, EDamageType elem) : base(type, name, description, damage, elem)
+        public Imp(ECardType type, string name, string description, int damage, EDamageType elem) : base(type, name, description, damage, elem)
         {
         }
         public override int CalcDmgAmount(Card EnemyCard)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.VisualBasic;
 using SemesterProject.Cards;
 using SemesterProject.Cards.CardTypes;
 
@@ -10,156 +11,246 @@ namespace SemesterProject
 {
     enum EWinner
     {
-        draw = 0, player1 = 1, player2 = 2
+        draw = 0, player = 1, opponent = 2
     }
     internal class Game
     {
-        public Game(Player Player)
+        public Game(Player player, Player opponent)
         {
-            Player1 = Player;
+            Player = player;
+            Opponent = opponent;
         }
 
-        public Player Player1 { get; set; }
-        public Player? Player2 { get; set; }
+        public Player Player { get; }
+        public Player Opponent { get; }
 
         public string? battleLog;
-
-        private void getOpponent()
-        {
-            //get opponent from database
-        }
+        public EWinner finalWinner;
 
         public void Battle()
         {
             Random rnd = new Random();
             int roundCounter = 0;
             EWinner winner;
-            EWinner finalWinner;
-            List<Card> Player1Deck = Player1.Deck;
-            List<Card> Player2Deck = Player2.Deck;
+            
+            List<Card> playerDeck = Player.Deck;
+            List<Card> opponentDeck = Opponent.Deck;
 
-            battleLog = $"Battle between {Player1.Username} and {Player2.Username}:\n";
+            battleLog = $"Battle between {Player.Username} and {Opponent.Username}:\n";
 
-            int RandomIndex1 = 0;
-            int RandomIndex2 = 0;
+            int randomIndex1 = 0;
+            int randomIndex2 = 0;
 
-            Card? Player1ChosenCard;
-            Card? Player2ChosenCard;
+            Card? playerChosenCard;
+            Card? opponentChosenCard;
 
-            while (Player1Deck != null && Player2Deck != null && roundCounter<100)
+            while (playerDeck.Count != 0 && opponentDeck.Count != 0 && roundCounter<100)
             {
                 battleLog = $"{battleLog} Round {roundCounter + 1}:\n";
-                RandomIndex1 = rnd.Next(Player1Deck.Count);
-                RandomIndex2 = rnd.Next(Player2Deck.Count);
+                randomIndex1 = rnd.Next(playerDeck.Count);
+                randomIndex2 = rnd.Next(opponentDeck.Count);
 
-                Player1ChosenCard = Player1Deck[RandomIndex1];
-                Player2ChosenCard = Player2Deck[RandomIndex2];
+                playerChosenCard = playerDeck[randomIndex1];
+                opponentChosenCard = opponentDeck[randomIndex2];
 
-                if(Player1ChosenCard.CardType == ECardType.special)
+                bool removePlayerCard = false;
+                bool removeOpponentCard = false;
+
+                if(playerChosenCard.CardType == ECardType.special)
                 {
-                    switch(Player1ChosenCard.Name)
+                    removePlayerCard = true;
+                    switch(playerChosenCard.Name)
                     {
-                        case "DuplicateCard": DuplicateCard(Player1Deck);
+                        case "DuplicateCard":
+                            battleLog = $"{battleLog}{Player.Username} has used a Duplication Card! ";
+                            DuplicateCard(playerDeck, opponentDeck);
                             break;
-                        case "StealCard": StealCard(Player1Deck, Player2Deck, RandomIndex2);
+                        case "StealCard":
+                            battleLog = $"{battleLog}{Player.Username} has used a Steal Card! ";
+                            StealCard(playerDeck, opponentDeck, randomIndex2);
                             break;
                         default:break;
                     }
                 }
                 
-                if(Player2ChosenCard.CardType == ECardType.special)
+                if(opponentChosenCard.CardType == ECardType.special)
                 {
-                    switch (Player2ChosenCard.Name)
+                    removeOpponentCard= true;
+                    switch (opponentChosenCard.Name)
                     {
                         case "DuplicateCard":
-                            DuplicateCard(Player2Deck);
+                            battleLog = $"{battleLog}{Opponent.Username} has used a Duplication Card! ";
+                            DuplicateCard(opponentDeck, playerDeck);
                             break;
                         case "StealCard":
-                            StealCard(Player2Deck, Player1Deck, RandomIndex1);
+                            battleLog = $"{battleLog}{Opponent.Username} has used a Steal Card! ";
+                            StealCard(opponentDeck, playerDeck, randomIndex1);
                             break;
                         default: break;
                     }
                 }
 
-                winner = BattleRound(Player1ChosenCard, Player2ChosenCard);
+                winner = BattleRound(playerChosenCard, opponentChosenCard);
 
                 switch(winner)
                 {
-                    case EWinner.player1: Player1Deck.Add(Player2ChosenCard);
-                                          Player2Deck.Remove(Player2ChosenCard);
+                    case EWinner.player: playerDeck.Add(opponentChosenCard);
+                                          opponentDeck.Remove(opponentChosenCard);
                     break;
-                    case EWinner.player2: Player2Deck.Add(Player1ChosenCard);
-                                          Player1Deck.Remove(Player1ChosenCard);
+                    case EWinner.opponent: opponentDeck.Add(playerChosenCard);
+                                          playerDeck.Remove(playerChosenCard);
                     break;
                     default: break;
                 }
-                if(Player1Deck.Count() < Player2Deck.Count())
+                if(playerDeck.Count() < opponentDeck.Count())
                 {
-                    finalWinner = EWinner.player2;
+                    finalWinner = EWinner.opponent;
                 }
-                else if(Player2Deck.Count() < Player1Deck.Count())
+                else if(opponentDeck.Count() < playerDeck.Count())
                 {
-                    finalWinner = EWinner.player1;
+                    finalWinner = EWinner.player;
                 }
                 else
                 {
                     finalWinner = EWinner.draw;
                 }
                 
+                if(removePlayerCard) { playerDeck.Remove(playerChosenCard); }
+                if (removeOpponentCard) { opponentDeck.Remove(opponentChosenCard); }
+
                 roundCounter++;
             }
-            //continue implementing logic after battle (Elo gain or draw)
+            
+            switch(finalWinner)
+            {
+                case EWinner.player: 
+                    Player.Wins++;
+                    battleLog = $"{battleLog}{Player.Username} has won the battle!\n";
+                    break;
+                case EWinner.opponent: 
+                    Player.Wins--;
+                    battleLog = $"{battleLog}{Opponent.Username} has won the battle!\n";
+                    break;
+                case EWinner.draw: 
+                    Player.Draws++;
+                    battleLog = $"{battleLog}The battle was a draw!\n";
+                    break;
+                default:break;
+            }
+            CalculateNewPlayerElo();
         }
 
-        private EWinner BattleRound(Card Player1Card, Card Player2Card)
+        private EWinner BattleRound(Card PlayerCard, Card OpponentCard)
         {
-            int player1Damage = Player1Card.CalcDmgAmount(Player2Card);
-            int player2Damage = Player2Card.CalcDmgAmount(Player1Card);
-            if (player1Damage < player2Damage)
+            int playerDamage = PlayerCard.CalcDmgAmount(OpponentCard);
+            int opponentDamage = OpponentCard.CalcDmgAmount(PlayerCard);
+            if (playerDamage < opponentDamage)
             {
-                battleLog = $"{battleLog}{Player1.Username} {Player1Card.Name} ({player1Damage}) VS {Player2.Username} {Player2Card.Name} ({player2Damage}): {Player2.Username} wins!\n";
-                return EWinner.player2;
+                battleLog = $"{battleLog}{Player.Username} uses {PlayerCard.Name} with {playerDamage} damage VS {Opponent.Username} uses {OpponentCard.Name} with {opponentDamage} damage: {Opponent.Username} wins!\n";
+                return EWinner.opponent;
             }
-            else if (player2Damage < player1Damage)
+            else if (opponentDamage < playerDamage)
             {
-                battleLog = $"{battleLog}{Player1.Username} {Player1Card.Name} ({player1Damage}) VS {Player2.Username} {Player2Card.Name} ({player2Damage}): {Player1.Username} wins!\n";
-                return EWinner.player1;
+                battleLog = $"{battleLog}{Player.Username} uses {PlayerCard.Name} with {playerDamage} damage VS {Opponent.Username} uses {OpponentCard.Name} with {opponentDamage} damage: {Player.Username} wins!\n";
+                return EWinner.player;
             }
-            battleLog = $"{battleLog}{Player1.Username} {Player1Card.Name} ({player1Damage}) VS {Player2.Username} {Player2Card.Name} ({player2Damage}): It is a draw!\n";
+            battleLog = $"{battleLog}{Player.Username} uses {PlayerCard.Name} with {playerDamage} damage VS {Opponent.Username} uses {OpponentCard.Name} with {opponentDamage}damage: It is a draw!\n";
             return EWinner.draw;
         }
 
-        private void DuplicateCard(List<Card> Deck) 
+        private EWinner SimulatedRound(Card PlayerCard, Card OpponentCard)
         {
-            int damage = 0;
-            Card duplicate;
-            foreach(Card card in Deck)
+            int playerDamage = PlayerCard.CalcDmgAmount(OpponentCard);
+            int opponentDamage = OpponentCard.CalcDmgAmount(PlayerCard);
+            if (playerDamage < opponentDamage)
             {
-                if (card.Damage > damage)
+                return EWinner.opponent;
+            }
+            else if (opponentDamage < playerDamage)
+            {
+                return EWinner.player;
+            }
+            return EWinner.draw;
+        }
+
+        private void DuplicateCard(List<Card> specialCardDeck, List<Card> enemyDeck) 
+        {
+            int beatenCards = 0;
+            Card duplicate = null;
+            foreach (Card myCard in specialCardDeck)
+            {
+                int wins = 0;
+                foreach(Card enemyCard in enemyDeck)
                 {
-                    damage = card.Damage;
-                    duplicate = card;
+                    if(SimulatedRound(myCard, enemyCard)==EWinner.player){ wins++; }
                 }
+                if(wins>beatenCards)
+                {
+                    beatenCards=wins;
+                    duplicate = myCard;
+                }
+            }
+            if(duplicate!=null)
+            {
+                battleLog = $"{battleLog}The duplicated Card is {duplicate.Name}!\n";
+                specialCardDeck.Add(duplicate);
+            }
+            else
+            {
+                battleLog = $"{battleLog}There was no Card worth duplicating so nothing happens!\n";
             }
         }
 
-        private void StealCard(List<Card> DeckMe, List<Card> DeckOpponent, int notToSteal)
+        private void StealCard(List<Card> specialCardDeck, List<Card> deckOpponent, int notToSteal)
         {
-            int damage = 0;
-            int index = 0;
-            Card? toSteal = null;
-            foreach (Card card in DeckOpponent)
+            int beatenCards = 0;
+            Card steal = null;
+            foreach (Card enemyCard in deckOpponent)
             {
-                if (card.Damage > damage && index != notToSteal)
+                int wins = 0;
+                foreach (Card myCard in specialCardDeck)
                 {
-                    damage = card.Damage;
-                    toSteal = card;
+                    if (SimulatedRound(myCard, enemyCard) == EWinner.opponent) { wins++; }
                 }
-                index++;
+                if (wins > beatenCards)
+                {
+                    beatenCards = wins;
+                    steal = enemyCard;
+                }
             }
-            if(toSteal != null)
+            if (steal != null)
             {
-                DeckMe.Add(toSteal);
+                battleLog = $"{battleLog}The stolen Card is {steal.Name}!\n";
+                deckOpponent.Remove(steal);
+                specialCardDeck.Add(steal);
+            }
+            else
+            {
+                battleLog = $"{battleLog}There was no Card worth stealing so nothing happens!\n";
+            }
+        }
+
+        //sophisticated Elo system
+        private void CalculateNewPlayerElo()
+        {
+            double playerWinProb = 1.0 * 1.0 / (1 + 1.0 * Math.Pow(10,1.0 * (Opponent.Elo - Player.Elo) / 400));
+            double eloChange = 0;
+            switch (finalWinner)
+            {
+                case EWinner.player:
+                    eloChange = 30 * (1 - playerWinProb);
+                    battleLog = $"{battleLog}{Player.Username} has gained {eloChange} elo!\n";
+                    Player.Elo += eloChange; 
+                    break;
+                case EWinner.opponent:
+                    eloChange = 30 * (0 - playerWinProb);
+                    battleLog = $"{battleLog}{Player.Username} has lost {Math.Abs(eloChange)} elo!\n";
+                    Player.Elo += eloChange;
+                    break;
+                case EWinner.draw:
+                    battleLog = $"{battleLog}Since the battle was a draw the elo does not change!\n";
+                    break;
+                default:break;
             }
         }
     }

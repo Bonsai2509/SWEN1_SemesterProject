@@ -57,7 +57,7 @@ namespace SemesterProject.Database
         {
             using var command = new NpgsqlCommand(@"
             CREATE TABLE IF NOT EXISTS ""user""(
-            elo integer NOT NULL,
+            elo double precision NOT NULL,
             wins integer NOT NULL,
             loses integer NOT NULL,
             draws integer NOT NULL,
@@ -68,6 +68,7 @@ namespace SemesterProject.Database
             image character varying(255),
             token character varying(100) NOT NULL,
             isAdmin boolean NOT NULL,
+            hasDeck boolean NOT NULL,
             CONSTRAINT user_pkey PRIMARY KEY (username)
                 )", connection);
             command.ExecuteNonQuery();

@@ -11,7 +11,7 @@ enum ECardType
 
 enum EDamageType
 {
-    normal = 0, fire = 1, water = 2
+    normal = 0, fire = 1, water = 2, holy=3, demonic=4 
 }
 
 
@@ -19,20 +19,23 @@ namespace SemesterProject.Cards
 {
     abstract internal class Card
     {
-        public Card(ECardType type, string name, int damage, EDamageType elem)
+        public Card(ECardType type, string name, string description, int damage, EDamageType elem)
         {
             CardType = type;
             Name = name;
+            Description = description;
             Damage = damage;
             Element = elem;
         }
         public ECardType CardType { get; }
         public string Name { get; private set; }
+        public string Description { get; private set; }
         public int Damage { get; }
         public EDamageType Element { get; set; }
 
+        public abstract int CalcDmgAmount(Card EnemyCard);
 
-        public virtual int CalcDmgAmount(Card EnemyCard)
+        public virtual int CheckElementDmg(Card EnemyCard)
         {
             int calcDmg = 0;
             EDamageType enemyElement = EnemyCard.Element;
@@ -75,6 +78,34 @@ namespace SemesterProject.Cards
                             calcDmg = 2 * Damage;
                         }
                         else if (enemyElement == EDamageType.normal)
+                        {
+                            calcDmg = Damage / 2;
+                        }
+                        else
+                        {
+                            calcDmg = Damage;
+                        }
+                        break;
+                    case EDamageType.holy:
+                        if (enemyElement == EDamageType.demonic)
+                        {
+                            calcDmg = 2 * Damage;
+                        }
+                        else if (enemyElement == EDamageType.normal)
+                        {
+                            calcDmg = Damage / 2;
+                        }
+                        else
+                        {
+                            calcDmg = Damage;
+                        }
+                        break;
+                    case EDamageType.demonic:
+                        if (enemyElement == EDamageType.normal)
+                        {
+                            calcDmg = 2 * Damage;
+                        }
+                        else if (enemyElement == EDamageType.water)
                         {
                             calcDmg = Damage / 2;
                         }
