@@ -123,15 +123,15 @@ namespace SemesterProject
             
             switch(finalWinner)
             {
-                case EWinner.player: 
+                case EWinner.player:
                     Player.Wins++;
                     battleLog = $"{battleLog}{Player.Username} has won the battle!\n";
                     break;
-                case EWinner.opponent: 
-                    Player.Wins--;
+                case EWinner.opponent:
+                    Player.Loses++;
                     battleLog = $"{battleLog}{Opponent.Username} has won the battle!\n";
                     break;
-                case EWinner.draw: 
+                case EWinner.draw:
                     Player.Draws++;
                     battleLog = $"{battleLog}The battle was a draw!\n";
                     break;

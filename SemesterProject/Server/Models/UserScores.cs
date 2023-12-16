@@ -9,9 +9,9 @@ namespace SemesterProject.Server.Models
     internal class UserScores
     {
         public string Username { get; }
-        public int Elo { get; }
+        public double Elo { get; }
 
-        public UserScores(string username, int elo)
+        public UserScores(string username, double elo)
         {
             Username = username;
             Elo = elo;

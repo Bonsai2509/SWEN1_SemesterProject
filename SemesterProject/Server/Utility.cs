@@ -47,7 +47,10 @@ namespace SemesterProject.Server
             string[] parts = authorizationHeader.Split(' ');
             if (parts.Length != 2)
             {
-                throw new ArgumentOutOfRangeException();
+                //thought the curl script using "Bearer username-mtcgToken" would mean that "bearer is also in the string however it is not so i do not need this function
+                //since i would have to rewrite a lot of methods a bit to fix this i will simply return the whole string here
+                return authorizationHeader;
+                //throw new ArgumentOutOfRangeException();
             }
             return parts[1];
         }

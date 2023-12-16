@@ -20,6 +20,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 case "users": return PutUser(request);
                 case "deck": return PutDeck(request);
             }
+            Database.DisposeDbConnection();
             return new ResponseBuilder().BadRequest();
         }
 
@@ -36,7 +37,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 UserData userData = JsonConvert.DeserializeObject<UserData>(request.Payload);
                 try
                 {
-                    using var command = new NpgsqlCommand(@"UPDATE ""user"" SET ""username""=@p1, ""bio""=@p2, ""image""=@p3 WHERE ""username"" = @p4;", Connection);
+                    using var command = new NpgsqlCommand(@"UPDATE ""user"" SET ""name""=@p1, ""bio""=@p2, ""image""=@p3 WHERE ""username"" = @p4;", Connection);
                     command.Parameters.AddWithValue("p1", userData.Name);
                     command.Parameters.AddWithValue("p2", userData.Bio);
                     command.Parameters.AddWithValue("p3", userData.Image);
@@ -45,6 +46,7 @@ namespace SemesterProject.Server.Requests.Handlers
                     int affected = command.ExecuteNonQuery();
                     if(affected==0)
                     {
+                        Database.DisposeDbConnection();
                         return new ResponseBuilder().NotFound();
                     }
                     Database.DisposeDbConnection();
@@ -136,9 +138,7 @@ namespace SemesterProject.Server.Requests.Handlers
                             }
                         }
                     };
-                    int affected = command2.ExecuteNonQuery();
-
-                    if(affected != 9 && affected != 5){ transaction.Rollback(); Database.DisposeDbConnection(); return new ResponseBuilder().InternalServerError(); }
+                    command2.ExecuteNonQuery();
                     transaction.Commit();
                     Database.DisposeDbConnection();
                     return new ResponseBuilder().OK();

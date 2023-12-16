@@ -35,13 +35,14 @@ namespace SemesterProject.Database
 
         public void Start()
         {
-            connectionString = $"Server={_server}; Port={_port}; Username={_userName}; Password={_password}; Database={_dbName};";
+            connectionString = $"Server={_server}; Port={_port}; Username={_userName}; Password={_password}; Database={_dbName}; Pooling=false";
             _datasource = NpgsqlDataSource.Create(connectionString);
             connection = _datasource.OpenConnection();
         }
 
         public void DisposeDbConnection()
         {
+            connection.Close();
             connection.Dispose();
         }
 
@@ -69,6 +70,7 @@ namespace SemesterProject.Database
             token character varying(100) NOT NULL,
             isAdmin boolean NOT NULL,
             hasDeck boolean NOT NULL,
+            name character varying(255) NOT NULL,
             CONSTRAINT user_pkey PRIMARY KEY (username)
                 )", connection);
             command.ExecuteNonQuery();

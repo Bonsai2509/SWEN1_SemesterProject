@@ -22,6 +22,7 @@ namespace SemesterProject.Server.Requests.Handlers
             }
             else
             {
+                Database.DisposeDbConnection();
                 return new ResponseBuilder().BadRequest();
             }
         }

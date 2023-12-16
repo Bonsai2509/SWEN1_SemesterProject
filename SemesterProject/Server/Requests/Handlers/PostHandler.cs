@@ -31,6 +31,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 case "battles": return PostBattle(request);
                 case "tradings": return PostTrade(request);
             }
+            Database.DisposeDbConnection();
             return new ResponseBuilder().BadRequest();
         }
         private Response PostUser(Request request)
@@ -51,7 +52,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 reader.Close();
 
                 //create user in db
-                using var command = new NpgsqlCommand(@"INSERT INTO ""user"" (""elo"", ""wins"", ""loses"", ""draws"", ""coins"", ""username"", ""bio"", ""image"", ""token"", ""password"", ""isAdmin"", ""hasDeck"") VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12);", Connection);
+                using var command = new NpgsqlCommand(@"INSERT INTO ""user"" (""elo"", ""wins"", ""loses"", ""draws"", ""coins"", ""username"", ""bio"", ""image"", ""token"", ""password"", ""isAdmin"", ""hasDeck"", ""name"") VALUES (@p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13);", Connection);
                 command.Parameters.AddWithValue("p1", 1000);
                 command.Parameters.AddWithValue("p2", 0);
                 command.Parameters.AddWithValue("p3", 0);
@@ -63,7 +64,8 @@ namespace SemesterProject.Server.Requests.Handlers
                 command.Parameters.AddWithValue("p9", $"{userCred.Username}-mtcg");
                 command.Parameters.AddWithValue("p10", userCred.Password);
                 command.Parameters.AddWithValue("p11", (userCred.Username == "admin" ? true : false));
-                command.Parameters.AddWithValue("p11", false);
+                command.Parameters.AddWithValue("p12", false);
+                command.Parameters.AddWithValue("p13", userCred.Username);
                 command.Prepare();
                 int affected = command.ExecuteNonQuery();
                 if (affected == 0)
@@ -386,7 +388,6 @@ namespace SemesterProject.Server.Requests.Handlers
                     getOpponent.Dispose();
                     reader3.Close();
 
-                    Console.WriteLine(opponentUsername);
                     //get opponent deck from db
                     List<Card> opponentDeck = getDeckFromDb(opponentUsername);
                     if (opponentDeck.Count != 4) { Database.DisposeDbConnection(); return new ResponseBuilder().Conflict(); }
@@ -411,15 +412,20 @@ namespace SemesterProject.Server.Requests.Handlers
 
                     if (game.battleLog != null)
                     {
+                        Database.DisposeDbConnection();
                         return new ResponseBuilder().PlainTextResponse(game.battleLog);
                     }
-                    else { return new ResponseBuilder().InternalServerError(); }
+                    else 
+                    {
+                        Database.DisposeDbConnection();
+                        return new ResponseBuilder().InternalServerError();
+                    }
                 }
-                /*catch (Exception e)
+                catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
                     return new ResponseBuilder().InternalServerError();
-                }*/
+                }
                 finally { Database.DisposeDbConnection(); }
             }
         }
@@ -605,7 +611,7 @@ namespace SemesterProject.Server.Requests.Handlers
                     reader3.Close();
 
                     Card cardToTrade = new CardBuilder().generateCard(cardIndex);
-                    if (cardInTradeType != cardToTrade.CardType.ToString() || cardToTrade.Damage < cardInTradeDmg)
+                    if (cardInTradeType.ToLower() != cardToTrade.CardType.ToString().ToLower() || cardToTrade.Damage < cardInTradeDmg)
                     {
                         Database.DisposeDbConnection();
                         return new ResponseBuilder().Forbidden();

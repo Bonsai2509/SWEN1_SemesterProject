@@ -29,6 +29,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 case "scoreboard": return GetScoreboard(request);
                 case "tradings": return GetTradingDeals(request);
             }
+            Database.DisposeDbConnection();
             return new ResponseBuilder().BadRequest();
         }
 
@@ -37,18 +38,20 @@ namespace SemesterProject.Server.Requests.Handlers
             string username = request.Target[1];
             if (!(new UserAuthorizer().AuthorizeUserByUsernameInTarget(username, request)))
             {
+                Database.DisposeDbConnection();
                 return new ResponseBuilder().Unauthorized();
             }
             else
             {
                 try
                 {
-                    using var command = new NpgsqlCommand(@"SELECT ""username"", ""bio"", ""image"" FROM ""user"" WHERE ""username""=@p1;", Connection);
+                    using var command = new NpgsqlCommand(@"SELECT ""name"", ""bio"", ""image"" FROM ""user"" WHERE ""username""=@p1;", Connection);
                     command.Parameters.AddWithValue("p1", username);
                     command.Prepare();
                     using var reader = command.ExecuteReader();
                     if (!reader.Read())
                     {
+                        Database.DisposeDbConnection();
                         return new ResponseBuilder().NotFound();
                     }
                     string dbUsername = reader.GetString(0);
@@ -70,19 +73,18 @@ namespace SemesterProject.Server.Requests.Handlers
         private Response GetCardsByToken(Request request)
         {
             var security = new UserAuthorizer();
+            if(!security.RequestContainsToken(request))
+            {
+                Database.DisposeDbConnection();
+                return new ResponseBuilder().Unauthorized();
+            }
             var utils = new Utility();
             string token;
-            try
-            {
-                token = utils.ExtractTokenFromString(request.Headers["Authorization"]);
-            }
-            catch (ArgumentOutOfRangeException)
-            {
-                return new ResponseBuilder().BadRequest();
-            }
+            token = utils.ExtractTokenFromString(request.Headers["Authorization"]);
             string username = utils.ExtractUsernameFromToken(token);
             if (!security.AuthorizeUserByToken(request))
             {
+                Database.DisposeDbConnection();
                 return new ResponseBuilder().Unauthorized();
             }
             else
@@ -136,16 +138,15 @@ namespace SemesterProject.Server.Requests.Handlers
             var security = new UserAuthorizer();
             var utils = new Utility();
             string token;
-            try
+            if (!security.RequestContainsToken(request))
             {
-                token = utils.ExtractTokenFromString(request.Headers["Authorization"]);
+                Database.DisposeDbConnection();
+                return new ResponseBuilder().Unauthorized();
             }
-            catch (ArgumentOutOfRangeException)
-            {
-                return new ResponseBuilder().BadRequest();
-            }
+            token = utils.ExtractTokenFromString(request.Headers["Authorization"]);
             if (!security.AuthorizeUserByToken(request))
             {
+                Database.DisposeDbConnection();
                 return new ResponseBuilder().Unauthorized();
             }
             else
@@ -196,7 +197,7 @@ namespace SemesterProject.Server.Requests.Handlers
         }
         private Response GetDeckByTokenJson(List<CardData> cardList)
         {
-            if (cardList.Count == 0) return new ResponseBuilder().NotFound();
+            if (cardList.Count == 0) return new ResponseBuilder().NoContent();
             else return new ResponseBuilder().JsonResponseCardList(cardList);
         }
         private Response GetDeckByTokenPlain(List<CardData> cardList)
@@ -205,7 +206,7 @@ namespace SemesterProject.Server.Requests.Handlers
             string plainText = null;
             foreach (CardData card in cardList)
             {
-                plainText = $"{plainText} Card {cardCounter}: UUID {card.CardId}, Name {card.CardName}, Damage {card.CardDamage};";
+                plainText = $"{plainText} Card {cardCounter}: UUID: {card.CardId}, Name: {card.CardName}, Damage: {card.CardDamage}, Description: {card.CardDescription}\n";
                 cardCounter++;
             }
             if (plainText != null)
@@ -214,7 +215,7 @@ namespace SemesterProject.Server.Requests.Handlers
             }
             else
             {
-                return new ResponseBuilder().NotFound();
+                return new ResponseBuilder().NoContent();
             }
         }
 
@@ -229,10 +230,12 @@ namespace SemesterProject.Server.Requests.Handlers
             }
             catch (ArgumentOutOfRangeException)
             {
+                Database.DisposeDbConnection();
                 return new ResponseBuilder().BadRequest();
             }
             if (!security.AuthorizeUserByToken(request))
             {
+                Database.DisposeDbConnection();
                 return new ResponseBuilder().Unauthorized();
             }
             else
@@ -245,10 +248,11 @@ namespace SemesterProject.Server.Requests.Handlers
                     using var reader = command.ExecuteReader();
                     if (!reader.Read())
                     {
+                        Database.DisposeDbConnection();
                         return new ResponseBuilder().NotFound();
                     }
                     string dbUsername = reader.GetString(0);
-                    int elo = reader.GetInt32(1);
+                    double elo = reader.GetDouble(1);
                     int wins = reader.GetInt32(2);
                     int loses = reader.GetInt32(3);
                     double winLoseRatio = ((loses == 0) ? wins : wins / loses);
@@ -269,6 +273,7 @@ namespace SemesterProject.Server.Requests.Handlers
             var security = new UserAuthorizer();
             if (!security.AuthorizeUserByToken(request))
             {
+                Database.DisposeDbConnection();
                 return new ResponseBuilder().Unauthorized();
             }
             else
@@ -285,7 +290,7 @@ namespace SemesterProject.Server.Requests.Handlers
                         userCount++;
                         var user = new UserScores(
                             reader.GetString(0),
-                            reader.GetInt32(1)
+                            reader.GetDouble(1)
                             );
                         userList.Add(user);
                     }
@@ -313,6 +318,7 @@ namespace SemesterProject.Server.Requests.Handlers
             var security = new UserAuthorizer();
             if (!security.AuthorizeUserByToken(request))
             {
+                Database.DisposeDbConnection();
                 return new ResponseBuilder().Unauthorized();
             }
             else
