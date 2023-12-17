@@ -29,9 +29,9 @@ namespace SemesterProject.Server
         Delete,
         Error
     }
-    internal class Utility
+    public class Utility
     {
-        public static Method GetMethod(string method)
+        public Method GetMethod(string method)
         {
             switch (method.ToLower())
             {

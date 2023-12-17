@@ -8,7 +8,7 @@ using SemesterProject.Cards;
 
 namespace SemesterProject
 {
-    internal class Player
+    public class Player
     {
         public Player(double elo, int wins, int loses, int draws, string username, List<Card> deck)
         {

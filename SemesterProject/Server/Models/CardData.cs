@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SemesterProject.Server.Models
 {
-    internal class CardData
+    public class CardData
     {
         public CardData(Guid cardId, string cardName, string cardDescription, float cardDamage)
         {

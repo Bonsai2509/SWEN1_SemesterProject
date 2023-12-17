@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SemesterProject.Server.Models
 {
-    internal class TradeDetails
+    public class TradeDetails
     {
         public Guid TradeId { get; }
         public Guid CardId { get; }

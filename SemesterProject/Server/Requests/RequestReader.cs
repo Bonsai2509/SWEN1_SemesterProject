@@ -44,7 +44,7 @@ namespace SemesterProject.Server.Requests
 
                 var firstLine = line.Split(' ');
 
-                httpMethod = Utility.GetMethod(firstLine[0]);
+                httpMethod = new Utility().GetMethod(firstLine[0]);
                 targetString = firstLine[1];
                 version = firstLine[2];
 

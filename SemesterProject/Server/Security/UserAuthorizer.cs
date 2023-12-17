@@ -12,7 +12,7 @@ using SemesterProject.Server.Responses;
 
 namespace SemesterProject.Server.Security
 {
-    internal class UserAuthorizer : Handler
+    public class UserAuthorizer : Handler
     {
         public bool RequestContainsToken(Request request)
         {

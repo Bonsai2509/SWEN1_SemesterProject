@@ -9,16 +9,17 @@ using SemesterProject.Cards.CardTypes;
 
 namespace SemesterProject
 {
-    enum EWinner
+    public enum EWinner
     {
         draw = 0, player = 1, opponent = 2
     }
-    internal class Game
+    public class Game
     {
         public Game(Player player, Player opponent)
         {
             Player = player;
             Opponent = opponent;
+            battleLog = null;
         }
 
         public Player Player { get; }
@@ -140,7 +141,7 @@ namespace SemesterProject
             CalculateNewPlayerElo();
         }
 
-        private EWinner BattleRound(Card PlayerCard, Card OpponentCard)
+        public EWinner BattleRound(Card PlayerCard, Card OpponentCard)
         {
             int playerDamage = PlayerCard.CalcDmgAmount(OpponentCard);
             int opponentDamage = OpponentCard.CalcDmgAmount(PlayerCard);
@@ -173,7 +174,7 @@ namespace SemesterProject
             return EWinner.draw;
         }
 
-        private void DuplicateCard(List<Card> specialCardDeck, List<Card> enemyDeck) 
+        public void DuplicateCard(List<Card> specialCardDeck, List<Card> enemyDeck) 
         {
             int beatenCards = 0;
             Card duplicate = null;
@@ -201,9 +202,10 @@ namespace SemesterProject
             }
         }
 
-        private void StealCard(List<Card> specialCardDeck, List<Card> deckOpponent, int notToSteal)
+        public void StealCard(List<Card> specialCardDeck, List<Card> deckOpponent, int notToSteal)
         {
             int beatenCards = 0;
+            int cardCounter = 0;
             Card steal = null;
             foreach (Card enemyCard in deckOpponent)
             {
@@ -212,11 +214,12 @@ namespace SemesterProject
                 {
                     if (SimulatedRound(myCard, enemyCard) == EWinner.opponent) { wins++; }
                 }
-                if (wins > beatenCards)
+                if (wins > beatenCards && cardCounter != notToSteal)
                 {
                     beatenCards = wins;
                     steal = enemyCard;
                 }
+                cardCounter++;
             }
             if (steal != null)
             {

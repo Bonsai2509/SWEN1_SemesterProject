@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace SemesterProject.Server.Requests.Handlers
 {
-    internal class Handler
+    public class Handler
     {
         public PostgreSql Database { get; }
         public NpgsqlConnection Connection { get; }

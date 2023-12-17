@@ -44,7 +44,6 @@ namespace SemesterProject.Server.Requests.Handlers
                 }
                 string idString = request.Target[1];
                 Guid tradeId = Guid.Parse(idString);
-                Console.WriteLine(tradeId.ToString());
                 TradeDetails trade = null;
                 try
                 {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SemesterProject.Server.Models
 {
-    internal class UserScores
+    public class UserScores
     {
         public string Username { get; }
         public double Elo { get; }

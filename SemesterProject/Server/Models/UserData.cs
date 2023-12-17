@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SemesterProject.Server.Models
 {
-    internal class UserData
+    public class UserData
     {
         public string Name { get; }
         public string Bio { get; }

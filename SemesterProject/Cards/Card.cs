@@ -4,12 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-enum ECardType
+public enum ECardType
 {
     monster = 0, spell = 1, special = 2
 }
 
-enum EDamageType
+public enum EDamageType
 {
     normal = 0, fire = 1, water = 2, holy=3, demonic=4 
 }
@@ -17,7 +17,7 @@ enum EDamageType
 
 namespace SemesterProject.Cards
 {
-    abstract internal class Card
+    abstract public class Card
     {
         public Card(ECardType type, string name, string description, int damage, EDamageType elem)
         {

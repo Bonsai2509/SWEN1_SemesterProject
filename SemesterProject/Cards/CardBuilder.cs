@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SemesterProject.Cards
 {
-    internal class CardBuilder
+    public class CardBuilder
     {
         public ECardType[] CardType { get; }
         public string[] Name { get; }
@@ -43,7 +43,7 @@ namespace SemesterProject.Cards
 
         public Card generateCard(int index)
         {
-            if(index>(Name.Length-1) || index<0) throw new ArgumentOutOfRangeException("index");
+            if(index>(Name.Length-1) || index<0) throw new IndexOutOfRangeException("index");
             ECardType cardType = CardType[index];
             string name = Name[index];
             string description = Description[index];

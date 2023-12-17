@@ -10,7 +10,7 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace SemesterProject.Database
 {
-    internal class PostgreSql
+    public class PostgreSql
     {
         private string _dbName;
         private string _server;

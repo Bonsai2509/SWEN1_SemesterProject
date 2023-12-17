@@ -10,7 +10,7 @@ using SemesterProject.Server.Models;
 
 namespace SemesterProject.Server.Responses
 {
-    internal class Response
+    public class Response
     {
         public bool hasBody { get; }
         public int Status { get; }
@@ -34,7 +34,7 @@ namespace SemesterProject.Server.Responses
             Status=(int)status;
             StatusString = status.ToString();
         }
-        //needed a specific one for card since "List<object> payload" threw an error
+        //needed a specific ones for objects since "List<object> payload" threw an error
         public Response(List<CardData> payload, Status status = Server.Status.Ok) 
         {
             string json = JsonConvert.SerializeObject(payload);

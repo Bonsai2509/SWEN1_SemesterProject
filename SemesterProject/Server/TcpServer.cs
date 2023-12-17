@@ -38,14 +38,14 @@ namespace SemesterProject.Server
         private void HandleClient(System.Net.Sockets.TcpClient client)
         {
             Response response = null;
-            //try
-            //{
+            try
+            {
                 var _reqReader = new RequestReader(client);
                 var request = _reqReader.ReadRequest();
                 var router = new RequestRouter();
                 response = router.HandleRequest(request);
-            //}
-            /*catch(SqlException)
+            }
+            catch(SqlException)
             {
                 response = new ResponseBuilder().BadRequest();
             }
@@ -60,7 +60,7 @@ namespace SemesterProject.Server
             catch (NullReferenceException)
             {
                 response = new ResponseBuilder().InternalServerError();
-            }*/
+            }
             new ResponseSender().SendResponse(response, client);
 
             client.Close();

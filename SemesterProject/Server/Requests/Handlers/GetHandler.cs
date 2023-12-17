@@ -242,7 +242,7 @@ namespace SemesterProject.Server.Requests.Handlers
             {
                 try
                 {
-                    using var command = new NpgsqlCommand(@"SELECT ""username"", ""elo"", ""wins"", ""loses""  FROM ""user"" WHERE ""token""=@p1;", Connection);
+                    using var command = new NpgsqlCommand(@"SELECT ""name"", ""elo"", ""wins"", ""loses""  FROM ""user"" WHERE ""token""=@p1;", Connection);
                     command.Parameters.AddWithValue("p1", token);
                     command.Prepare();
                     using var reader = command.ExecuteReader();
@@ -282,7 +282,7 @@ namespace SemesterProject.Server.Requests.Handlers
                 try
                 {
                     int userCount = 0;
-                    using var command = new NpgsqlCommand(@"SELECT ""username"", ""elo"" FROM ""user"" ORDER BY ""elo"" DESC;", Connection);
+                    using var command = new NpgsqlCommand(@"SELECT ""name"", ""elo"" FROM ""user"" ORDER BY ""elo"" DESC;", Connection);
                     command.Prepare();
                     using var reader = command.ExecuteReader();
                     while (reader.Read())

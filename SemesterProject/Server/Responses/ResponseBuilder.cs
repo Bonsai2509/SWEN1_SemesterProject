@@ -7,7 +7,7 @@ using SemesterProject.Server.Models;
 
 namespace SemesterProject.Server.Responses
 {
-    internal class ResponseBuilder
+    public class ResponseBuilder
     {
         public Response OK()
         {

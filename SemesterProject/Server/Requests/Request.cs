@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SemesterProject.Server.Requests
 {
-    internal class Request
+    public class Request
     {
         public Request(Method method, string[] target, string version, Dictionary<string, string> headers, string payload, string requestParam)
         {
