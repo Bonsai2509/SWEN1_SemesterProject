@@ -68,8 +68,8 @@ namespace SemesterProject.Database
             bio character varying(255),
             image character varying(255),
             token character varying(100) NOT NULL,
-            isAdmin boolean NOT NULL,
-            hasDeck boolean NOT NULL,
+            ""isAdmin"" boolean NOT NULL,
+            ""hasDeck"" boolean NOT NULL,
             name character varying(255) NOT NULL,
             CONSTRAINT user_pkey PRIMARY KEY (username)
                 )", connection);
@@ -81,8 +81,8 @@ namespace SemesterProject.Database
             using var command = new NpgsqlCommand(@"
             CREATE TABLE IF NOT EXISTS stack(
                 cardindex integer NOT NULL,
-                inDeck boolean NOT NULL,
-                inTrade boolean NOT NULL,
+                ""inDeck"" boolean NOT NULL,
+                ""inTrade"" boolean NOT NULL,
                 cardid uuid NOT NULL,
                 username character varying(255) NOT NULL,
                 CONSTRAINT stack_pkey PRIMARY KEY (cardid),

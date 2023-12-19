@@ -9,7 +9,6 @@ namespace SemesterProject
         {
             var server = new TcpServer(10001);
             server.Start();
-            //var postgre = new PostgreSql("MTCG", "localhost", "5432", "postgres", "pass123");
         }
     }
 }
